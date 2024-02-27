@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name='python-noise-toolbox'
+version='0.1.0-dev0'
+description='A Python toolbox with all the specialty signal analysis tools for my PhD.'
+requires-python='>=3.9, <=3.11'
+dependencies=[
+    'numpy>=1.26.4',
+    'scipy>=1.12.0',
+    'matlabengine>=23.2.2'
+]
+
+[project.optional-dependencies]
+dev = [
+    'pytest>=8.0.2',
+    'twine>=5.0.0'
+]
+
+[project.urls]
+source = "https://gitlab.tudelft.nl/jpockele/josephines-bag-of-tricks"
