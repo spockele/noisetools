@@ -33,6 +33,9 @@ classifiers=[
     'Topic :: Utilities'
 ]
 
+[tool.setuptools]
+include-package-data = true
+
 [project.optional-dependencies]
 dev = [
     'pytest>=8.0.2',
