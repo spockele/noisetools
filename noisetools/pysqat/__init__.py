@@ -50,6 +50,39 @@ class PySQAT:
         """
         self.eng.quit()
 
+    @staticmethod
+    def _check_pa_paramters(wavfilename: str, dbfs: int | float, time_skip: int | float, loudness_field: int | float):
+        """
+        Check the input parameters of the psychoacoustic_annoyance functions in this class
+
+        Parameters
+        ----------
+        wavfilename : str
+            wavfilename specifies the file name of a wav file to be processed.
+
+        dbfs : number, optional
+            Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
+            SPL, or dBFS=94. If the specified dBFS is different from 94 dB SPL, then a gain factor will be applied.
+            NOTE: value should be convertible to an integer.
+
+        time_skip : number, optional
+            Skip start of the signal in <time_skip> seconds for statistics calculations.
+            NOTE: value should be convertible to an integer.
+
+        loudness_field : number, optional
+            Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
+            more info. NOTE: value should be convertible to an integer.
+        """
+        if not isinstance(dbfs, int) and not dbfs.is_integer():
+            raise ValueError('Value of parameter "dbfs" should be an integer.')
+        if not isinstance(time_skip, int) and not time_skip.is_integer():
+            raise ValueError('Value of parameter "time_skip" should be an integer.')
+        if not isinstance(loudness_field, int) and not loudness_field.is_integer():
+            raise ValueError('Value of parameter "loudness_field" should be an integer.')
+
+        if not os.path.exists(wavfilename):
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), wavfilename)
+
     def psychoacoustic_annoyance_zwicker1999(self, wavfilename: str, dbfs: int | float = 94.,
                                              time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
         """
@@ -108,15 +141,137 @@ class PySQAT:
             This would break MATLAB, but is checked beforehand to give a clear error message.
 
         """
-        if not isinstance(dbfs, int) and not dbfs.is_integer():
-            raise ValueError('Value of parameter "dbfs" should be an integer.')
-        if not isinstance(time_skip, int) and not time_skip.is_integer():
-            raise ValueError('Value of parameter "time_skip" should be an integer.')
-        if not isinstance(loudness_field, int) and not loudness_field.is_integer():
-            raise ValueError('Value of parameter "loudness_field" should be an integer.')
-
-        if not os.path.exists(wavfilename):
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), wavfilename)
+        self._check_pa_paramters(wavfilename, dbfs, time_skip, loudness_field)
 
         dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
         return self.eng.PsychoacousticAnnoyance_Zwicker1999_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
+
+    def psychoacoustic_annoyance_di2016(self, wavfilename: str, dbfs: int | float = 94.,
+                                        time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
+        """
+        Wrapper for the SQAT function PsychoacousticAnnoyance_Di2016_from_wavfile.
+
+        Only supports the use of .wav files, since the use of an array has unpredictable behaviour in the MATLAB engine.
+        The MATLAB parameters 'showPA' and 'show' are always set to false, since MATLAB plotting breaks python.
+
+        Parameters
+        ----------
+        wavfilename : str
+            wavfilename specifies the file name of a wav file to be processed.
+
+        dbfs : number, optional
+            Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
+            SPL, or dBFS=94. If the specified dBFS is different from 94 dB SPL, then a gain factor will be applied.
+            NOTE: value should be convertible to an integer.
+
+        time_skip : number, optional
+            Skip start of the signal in <time_skip> seconds for statistics calculations.
+            NOTE: value should be convertible to an integer.
+
+        loudness_field : number, optional
+            Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
+            more info. NOTE: value should be convertible to an integer.
+
+        Returns
+        -------
+        dict :
+            Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs with the PA results:
+                - InstantaneousPA: instantaneous quantity (unity) vs time
+                - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
+                  signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
+                - time : time vector in seconds
+                - wt : tonality and loudness weighting function (not squared)
+                - wfr : fluctuation strength and roughness weighting function (not squared)
+                - ws : sharpness and loudness weighting function (not squared)
+                - Statistics: dict with the following keys:
+                    - PAmean : mean value of instantaneous fluctuation strength (unit)
+                    - PAstd : standard deviation of instantaneous fluctuation strength (unit)
+                    - PAmax : maximum of instantaneous fluctuation strength (unit)
+                    - PAmin : minimum of instantaneous fluctuation strength (unit)
+                    - PAx : x percentile of the PA metric exceeded during x percent of the time
+
+            Also contains the following dicts under keys:
+                -  L : dict with Loudness results, similar structure to the PA results
+                -  S : dict with Sharpness, similar structure to the PA results
+                -  R : dict with roughness results, similar structure to the PA results
+                - FS : dict with fluctuation strength results, similar structure to the PA results
+                -  K : dict with tonality results, similar structure to the PA results
+
+            NOTE: values will be of a type according to the MATLAB help pages: https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
+
+        Raises
+        ------
+        ValueError
+            If the input parameters dbfs, time_skip or loudness_field are not interpretable as integer values.
+            This would break MATLAB, but is checked beforehand to give a clear error message.
+
+        """
+        self._check_pa_paramters(wavfilename, dbfs, time_skip, loudness_field)
+
+        dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
+        return self.eng.PsychoacousticAnnoyance_Di2016_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
+
+    def psychoacoustic_annoyance_more2010(self, wavfilename: str, dbfs: int | float = 94.,
+                                          time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
+        """
+        Wrapper for the SQAT function PsychoacousticAnnoyance_More2010_from_wavfile.
+
+        Only supports the use of .wav files, since the use of an array has unpredictable behaviour in the MATLAB engine.
+        The MATLAB parameters 'showPA' and 'show' are always set to false, since MATLAB plotting breaks python.
+
+        Parameters
+        ----------
+        wavfilename : str
+            wavfilename specifies the file name of a wav file to be processed.
+
+        dbfs : number, optional
+            Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
+            SPL, or dBFS=94. If the specified dBFS is different from 94 dB SPL, then a gain factor will be applied.
+            NOTE: value should be convertible to an integer.
+
+        time_skip : number, optional
+            Skip start of the signal in <time_skip> seconds for statistics calculations.
+            NOTE: value should be convertible to an integer.
+
+        loudness_field : number, optional
+            Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
+            more info. NOTE: value should be convertible to an integer.
+
+        Returns
+        -------
+        dict :
+            Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs with the PA results:
+                - InstantaneousPA: instantaneous quantity (unity) vs time
+                - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
+                  signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
+                - time : time vector in seconds
+                - wt : tonality and loudness weighting function (not squared)
+                - wfr : fluctuation strength and roughness weighting function (not squared)
+                - ws : sharpness and loudness weighting function (not squared)
+                - Statistics: dict with the following keys:
+                    - PAmean : mean value of instantaneous fluctuation strength (unit)
+                    - PAstd : standard deviation of instantaneous fluctuation strength (unit)
+                    - PAmax : maximum of instantaneous fluctuation strength (unit)
+                    - PAmin : minimum of instantaneous fluctuation strength (unit)
+                    - PAx : x percentile of the PA metric exceeded during x percent of the time
+
+            Also contains the following dicts under keys:
+                -  L : dict with Loudness results, similar structure to the PA results
+                -  S : dict with Sharpness, similar structure to the PA results
+                -  R : dict with roughness results, similar structure to the PA results
+                - FS : dict with fluctuation strength results, similar structure to the PA results
+                -  K : dict with tonality results, similar structure to the PA results
+
+            NOTE: values will be of a type according to the MATLAB help pages: https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
+
+        Raises
+        ------
+        ValueError
+            If the input parameters dbfs, time_skip or loudness_field are not interpretable as integer values.
+            This would break MATLAB, but is checked beforehand to give a clear error message.
+
+        """
+        self._check_pa_paramters(wavfilename, dbfs, time_skip, loudness_field)
+
+        dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
+        return self.eng.PsychoacousticAnnoyance_More2010_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
