@@ -15,7 +15,6 @@ References
 
 """
 import matlab.engine as mateng
-import numpy as np
 import errno
 import os
 
