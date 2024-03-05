@@ -39,7 +39,9 @@ include-package-data = true
 [project.optional-dependencies]
 dev = [
     'pytest>=8.0.2',
-    'twine>=5.0.0'
+    'twine>=5.0.0',
+    'matplotlib>=3.8.3',
+    'pandas>=2.2.1'
 ]
 
 [project.urls]

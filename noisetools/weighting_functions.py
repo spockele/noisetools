@@ -1,6 +1,7 @@
 """
 Spectral weighting functions for acoustic processing.
 """
+import scipy.signal as spsig
 import numpy as np
 
 
@@ -69,80 +70,267 @@ def weighting_poles() -> tuple[float, float, float, float]:
     return f1, f2, f3, f4
 
 
-def a_weighting(f, a_1000: float = None) -> np.ndarray:
+def a_weighting(f: float | int | np.number | list | np.ndarray,
+                a_1000: float = None
+                ) -> float | int | np.number | list | np.ndarray:
     """
     A frequency weighting network A(f) defined by Equation E.6 in the IEC 61672-1:2013 standard. [1]_
 
     Parameters
     ----------
-    f : numpy.ndarray
-        N-dimensional array of frequencies over which to calculate the a-weighting.
+    f : number | array_like
+        Frequenc(y)(ies) over which to calculate the c-weighting.
     a_1000 : float, optional
-        Manually set the gain of the weighting function. Defaults to the a_weighting([1000, ], a_1000=0.).
+        Manually set the gain of the weighting function. Defaults to the a_weighting(1000, a_1000=0.).
 
     Returns
     -------
-    numpy.ndarray
-        Array of A-weighting values in dB, corresponding to the input frequencies f.
+    float | np.ndarray
+        A-weighting value(s) in dB, corresponding to the input frequenc(y)(ies) f.
 
     References
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
     """
+    if isinstance(f, list):
+        f = np.array(f)
+    elif not issubclass(type(f), np.ndarray):
+        f = np.array([f, ])
+
     # Set a_1000 to default, such that a_weighting([1000, ], ) = [0, ]. According to E.3.2
     if a_1000 is None:
-        a_1000 = a_weighting(np.array([1000., ]), a_1000=0.)
+        a_1000 = a_weighting(1000., a_1000=0.)
     # Get the pole frequencies from equations E.2, E.7, E.8 and E.3
     f1, f2, f3, f4 = weighting_poles()
     # Use equation E.6 to obtain the final attenuation
-    delta_l_a = np.zeros(f.shape)
-    delta_l_a[f > 0] = 10 * np.log10(
-        ((
-         (f4 * f[f > 0] ** 2) ** 2
-         ) / (
-         (f[f > 0] ** 2 + f1 ** 2) * np.sqrt((f[f > 0] ** 2 + f2 ** 2)) *
-         np.sqrt((f[f > 0] ** 2 + f3 ** 2)) * (f[f > 0] ** 2 + f4 ** 2)
-         )) ** 2
-    )
+    delta_l_a = 1e-18 * np.ones(f.shape)
 
-    return delta_l_a - a_1000
+    num = (f4 * f[f > 0] ** 2) ** 2
+    p1 = f[f > 0] ** 2 + f1 ** 2
+    p2 = f[f > 0] ** 2 + f2 ** 2
+    p3 = f[f > 0] ** 2 + f3 ** 2
+    p4 = f[f > 0] ** 2 + f4 ** 2
+
+    delta_l_a[f > 0] = num / (p1 * np.sqrt(p2) * np.sqrt(p3) * p4)
+
+    return 20 * np.log10(delta_l_a) - a_1000
 
 
-def c_weighting(f: np.ndarray, c_1000: float = None) -> np.ndarray:
+def c_weighting(f: float | int | np.number | list | np.ndarray,
+                c_1000: float = None
+                ) -> float | int | np.number | list | np.ndarray:
     """
     C frequency weighting network C(f) defined by Equation E.1 in the IEC 61672-1:2013 standard. [1]_
 
     Parameters
     ----------
-    f : numpy.ndarray
-        N-dimensional array of frequencies over which to calculate the c-weighting.
+    f : number | array_like
+        Frequenc(y)(ies) over which to calculate the c-weighting.
     c_1000 : float, optional
-        Manually set the gain of the weighting function. Defaults to the c_weighting([1000, ], c_1000=0.).
+        Manually set the gain of the weighting function. Defaults to the c_weighting(1000, c_1000=0.).
 
     Returns
     -------
-    numpy.ndarray
-        Array of C-weighting values in dB, corresponding to the input frequencies f.
+    float | np.ndarray
+        C-weighting value(s) in dB, corresponding to the input frequenc(y)(ies) f.
 
     References
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
     """
+    if isinstance(f, list):
+        f = np.array(f)
+    elif not isinstance(f, np.ndarray):
+        f = np.array([f, ])
+
     # Set c_1000 to default, such that c_weighting([1000, ], ) = [0, ], according to E.2.2
     if c_1000 is None:
-        c_1000 = c_weighting(np.array([1000., ]), c_1000=0.)
+        c_1000 = c_weighting(1000., c_1000=0.)
     # Get the pole frequencies from equations E.2 and E.3
     f1, _, _, f4 = weighting_poles()
     # Use equation E.1 to obtain the final attenuation
-    delta_l_c = np.zeros(f.shape)
-    delta_l_c[f > 0] = 10 * np.log10(
-        ((
-         (f4 * f[f > 0]) ** 2
-         ) / (
-         (f[f > 0] ** 2 + f1 ** 2) * (f[f > 0] ** 2 + f4 ** 2)
-         )) ** 2
-    )
+    delta_l_c = 1e-18 * np.ones(f.shape)
 
-    return delta_l_c - c_1000
+    num = (f4 * f[f > 0]) ** 2
+    p1 = f[f > 0] ** 2 + f1 ** 2
+    p4 = f[f > 0] ** 2 + f4 ** 2
+
+    delta_l_c[f > 0] = num / (p1 * p4)
+
+    return 20 * np.log10(delta_l_c) - c_1000
+
+
+def weighting_filter(curve: str = 'A', analog: bool = False, output: str = 'ba', fs: float = 51.2e3, ):
+    """
+    Returns the filter design for the weighting filters defined in IEC 61672-1:2013.
+
+    Parameters
+    ----------
+    curve: str, optional
+        The name of the weighting curve to be used in this filter. Can be 'A' 'C'
+    analog: bool, optional
+        When True, return an analog filter, otherwise a digital filter is returned.
+    output: str, optional
+        Type of output: numerator/denominator (‘ba’), pole-zero (‘zpk’), or second-order sections (‘sos’).
+        Default is ‘ba’ for backwards compatibility, but ‘sos’ should be used for general-purpose filtering.
+    fs: float, optional
+        The sampling frequency of the digital system. Defaults to 51.2 kHz.
+
+    Returns
+    -------
+    b, a : numpy.ndarray, numpy.ndarray
+        Numerator (b) and denominator (a) polynomials of the IIR filter. Only returned if output='ba'.
+    z, p, k : numpy.ndarray, numpy.ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer function. Only returned if output='zpk'.
+    sos: numpy.ndarray
+        Second-order sections representation of the IIR filter. Only returned if output='sos'.
+
+    Notes
+    -----
+    A-weighting complies with performance class 2 and C-weighting with performance class 1.
+
+    References
+    ----------
+    .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
+        Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+    """
+    # Get the pole frequencies from equations E.2, E.7, E.8 and E.3
+    f1, f2, f3, f4 = weighting_poles()
+
+    # Set up the A-weighting curve
+    if curve.upper() == 'A':
+        # There are 4 zeroes at 0 Hz
+        zeros = np.zeros((4, ))
+        # There are 8 poles, 1 pair per pole frequency
+        poles = np.array([-2 * np.pi * f1, -2 * np.pi * f1,
+                          -2 * np.pi * f4, -2 * np.pi * f2,
+                          -2 * np.pi * f4, -2 * np.pi * f3,
+                          -2 * np.pi * f4, -2 * np.pi * f4,
+                          ])
+
+    # Set up the C-weighting curve
+    elif curve.upper() == 'C':
+        # There are 2 zeroes at 0 Hz
+        zeros = np.zeros((2, ))
+        # There are 4 poles, 1 pair per pole frequency
+        poles = np.array([-2 * np.pi * f1, -2 * np.pi * f1,
+                          -2 * np.pi * f4, -2 * np.pi * f4,
+                          ])
+
+    # Error if the curve type is not understood
+    else:
+        raise ValueError(f'{curve} not understood as weighting curve type.')
+
+    # Get the gain to normalise the weighting s.t. weighting(1000 Hz) = 0 dB
+    b, a = spsig.zpk2tf(zeros, poles, 1.)
+    gain = 1 / abs(spsig.freqs(b, a, [2 * np.pi * 1000])[1][0])
+
+    # Convert to a digital filter if so desired
+    if not analog:
+        zeros, poles, gain = spsig.bilinear_zpk(zeros, poles, gain, fs)
+
+    # Convert to ba/tf format
+    if output.lower() in ('ba', 'tf', ):
+        return spsig.zpk2tf(zeros, poles, gain)
+    # Return the zpk form
+    elif output.lower() == 'zpk':
+        return zeros, poles, gain
+    # Convert to sos format
+    elif output.lower() == 'sos':
+        return spsig.zpk2sos(zeros, poles, gain)
+    # Error if the output form is not valid.
+    else:
+        raise ValueError(f'{output} is not a valid output form.')
+
+
+def weigh_signal(signal: list | np.ndarray, fs: int | float | np.number, curve: str = 'A'):
+    """
+    Apply signal weighting in the time domain
+
+    Parameters
+    ----------
+    signal: array_like
+        Array with the digital signal.
+    fs: float
+        The sampling frequency of the digital signal
+    curve: str, optional
+        The name of the weighting curve to be used in this filter. Can be 'A' 'C'
+    """
+    weighting_sos = weighting_filter(curve, output='sos', fs=fs)
+    return spsig.sosfilt(weighting_sos, signal)
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    weighting_table = pd.read_csv('weighting_table.csv', header=0, index_col=0, delimiter=';').replace(np.inf, 1e12)
+
+    plt.figure(1)
+    plt.semilogx(weighting_table.index, a_weighting(weighting_table.index.to_numpy()))
+    plt.errorbar(x=weighting_table.index, y=weighting_table['a'], yerr=(weighting_table['limit 2-'], weighting_table['limit 2+'], ), fmt='k.', capsize=2)
+
+    # ba/tf type
+    ba = weighting_filter('a', analog=True, output='ba')
+    w, h = spsig.freqs(*ba)
+    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
+    # zpk type
+    zpk = weighting_filter('a', analog=True, output='zpk')
+    w, h = spsig.freqs_zpk(*zpk)
+    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
+
+    # ba/tf digital type
+    ba = weighting_filter('a', output='ba', fs=51.2e3)
+    w, h = spsig.freqz(*ba, fs=51.2e3)
+    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+    # zpk digital type
+    zpk = weighting_filter('a', output='zpk', fs=51.2e3)
+    w, h = spsig.freqz_zpk(*zpk, fs=51.2e3)
+    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+    # sos digital type
+    sos = weighting_filter('a', output='sos', fs=51.2e3)
+    w, h = spsig.sosfreqz(sos, fs=51.2e3)
+    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+
+    plt.ylim(-60, 6)
+    plt.yticks(np.arange(-60, 6 + 6, 6))
+    plt.ylabel('Attenuation (dB)')
+    plt.xlim(10, 25e3)
+    plt.xlabel('f (Hz)')
+    plt.grid()
+
+    plt.figure(2)
+    plt.semilogx(weighting_table.index, c_weighting(weighting_table.index.to_numpy()))
+    plt.errorbar(x=weighting_table.index, y=weighting_table['c'], yerr=(weighting_table['limit 1-'], weighting_table['limit 1+'], ), fmt='k.', capsize=2)
+
+    # ba/tf type
+    ba = weighting_filter('c', analog=True, output='ba')
+    w, h = spsig.freqs(*ba)
+    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
+    # zpk type
+    zpk = weighting_filter('c', analog=True, output='zpk')
+    w, h = spsig.freqs_zpk(*zpk)
+    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
+
+    # ba/tf digital type
+    ba = weighting_filter('c', output='ba', fs=51.2e3)
+    w, h = spsig.freqz(*ba, fs=51.2e3)
+    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+    # zpk digital type
+    zpk = weighting_filter('c', output='zpk', fs=51.2e3)
+    w, h = spsig.freqz_zpk(*zpk, fs=51.2e3)
+    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+    # sos digital type
+    sos = weighting_filter('c', output='sos', fs=51.2e3)
+    w, h = spsig.sosfreqz(sos, fs=51.2e3)
+    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+
+    plt.ylim(-24, 6)
+    plt.yticks(np.arange(-24, 6 + 6, 6))
+    plt.ylabel('Attenuation (dB)')
+    plt.xlim(10, 25e3)
+    plt.xlabel('f (Hz)')
+    plt.grid()
+    plt.show()
