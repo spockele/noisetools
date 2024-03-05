@@ -93,10 +93,12 @@ def a_weighting(f: float | int | np.number | list | np.ndarray,
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
     """
+    f_is_num = False
     if isinstance(f, list):
         f = np.array(f)
     elif not issubclass(type(f), np.ndarray):
         f = np.array([f, ])
+        f_is_num = True
 
     # Set a_1000 to default, such that a_weighting([1000, ], ) = [0, ]. According to E.3.2
     if a_1000 is None:
@@ -111,8 +113,10 @@ def a_weighting(f: float | int | np.number | list | np.ndarray,
     p2 = f[f > 0] ** 2 + f2 ** 2
     p3 = f[f > 0] ** 2 + f3 ** 2
     p4 = f[f > 0] ** 2 + f4 ** 2
-
     delta_l_a[f > 0] = num / (p1 * np.sqrt(p2) * np.sqrt(p3) * p4)
+
+    if f_is_num:
+        delta_l_a = float(delta_l_a[0])
 
     return 20 * np.log10(delta_l_a) - a_1000
 
@@ -140,10 +144,12 @@ def c_weighting(f: float | int | np.number | list | np.ndarray,
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
     """
+    f_is_num = False
     if isinstance(f, list):
         f = np.array(f)
     elif not isinstance(f, np.ndarray):
         f = np.array([f, ])
+        f_is_num = True
 
     # Set c_1000 to default, such that c_weighting([1000, ], ) = [0, ], according to E.2.2
     if c_1000 is None:
@@ -158,6 +164,9 @@ def c_weighting(f: float | int | np.number | list | np.ndarray,
     p4 = f[f > 0] ** 2 + f4 ** 2
 
     delta_l_c[f > 0] = num / (p1 * p4)
+
+    if f_is_num:
+        delta_l_c = float(delta_l_c[0])
 
     return 20 * np.log10(delta_l_c) - c_1000
 
