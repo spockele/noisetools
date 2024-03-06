@@ -6,6 +6,10 @@ import numpy as np
 from .weighting_functions import weigh_signal
 
 
+__all__ = ['ospl',
+           ]
+
+
 def ospl(signal: list | np.ndarray, fs: int | float | np.number, weighting: str = None) -> float:
     """
     Calculate the Overall Sound Pressure Level of the input sound signal.

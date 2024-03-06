@@ -5,7 +5,13 @@ import scipy.signal as spsig
 import numpy as np
 
 
-__all__ = ['a_weighting_simons', 'a_weighting', 'c_weighting', 'weighting_poles', 'weighting_filter', 'weigh_signal']
+__all__ = ['a_weighting_simons',
+           'a_weighting',
+           'c_weighting',
+           'weighting_poles',
+           'weighting_filter',
+           'weigh_signal'
+           ]
 
 
 def a_weighting_simons(f: np.ndarray, ) -> np.ndarray:
@@ -178,7 +184,7 @@ def weighting_filter(curve: str = 'A', analog: bool = False, output: str = 'ba',
     Parameters
     ----------
     curve: str, optional
-        The name of the weighting curve to be used in this filter. Can be 'A' 'C'
+        The name of the weighting curve to be used in this filter. Can be 'A' or 'C'
     analog: bool, optional
         When True, return an analog filter, otherwise a digital filter is returned.
     output: str, optional
@@ -265,7 +271,7 @@ def weigh_signal(signal: list | np.ndarray, fs: int | float | np.number, curve: 
     fs: float
         The sampling frequency of the digital signal
     curve: str, optional
-        The name of the weighting curve to be used in this filter. Can be 'A' 'C'
+        The name of the weighting curve to be used in this filter. Can be 'A' or 'C'
     """
     weighting_sos = weighting_filter(curve, output='sos', fs=fs)
     return spsig.sosfilt(weighting_sos, signal)
