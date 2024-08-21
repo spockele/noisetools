@@ -76,9 +76,7 @@ def weighting_poles() -> tuple[float, float, float, float]:
     return f1, f2, f3, f4
 
 
-def a_weighting(f: float | int | np.number | list | np.ndarray,
-                a_1000: float = None
-                ) -> float | int | np.number | list | np.ndarray:
+def a_weighting(f: float | int | np.number | list | np.ndarray, a_1000: float = None) -> float | np.ndarray:
     """
     A frequency weighting network A(f) defined by Equation E.6 in the IEC 61672-1:2013 standard. [1]_
 
@@ -127,9 +125,7 @@ def a_weighting(f: float | int | np.number | list | np.ndarray,
     return 20 * np.log10(delta_l_a) - a_1000
 
 
-def c_weighting(f: float | int | np.number | list | np.ndarray,
-                c_1000: float = None
-                ) -> float | int | np.number | list | np.ndarray:
+def c_weighting(f: float | int | np.number | list | np.ndarray, c_1000: float = None) -> float | np.ndarray:
     """
     C frequency weighting network C(f) defined by Equation E.1 in the IEC 61672-1:2013 standard. [1]_
 
