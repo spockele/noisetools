@@ -13,5 +13,26 @@ A Python toolbox with all the specialty signal analysis tools for my PhD.
 Translation layer to run SQAT with this toolbox. Contains SQAT v1.1 inside to allow for running [[1](#greco2023)].
 
 ---
+## Copyright Notice
+
+Technische Universiteit Delft hereby disclaims all copyright interest in the program “WinTAur Lite”, a simplified wind turbine noise auralisation tool, based on WinTAur, written by the Author(s). 
+
+Henri Werij, Faculty of Aerospace Engineering, Technische Universiteit Delft.
+
+Copyright 2024 Josephine Pockelé
+
+Licensed under the Apache License, Version 2.0 (the "License"); 
+you may not use this file except in compliance with the License. 
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software 
+distributed under the License is distributed on an "AS IS" BASIS, 
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+See the License for the specific language governing permissions and 
+limitations under the License.
+
+---
 ## References
 <a id="greco2023">[1]</a> Gil Felix Greco, Roberto Merino-Martínez, and Alejandro Osses, ‘SQAT: a sound quality analysis toolbox for MATLAB’. Zenodo, Jan. 29, 2024. doi: [10.5281/ZENODO.10580337](https://doi.org/10.5281/ZENODO.10580337).

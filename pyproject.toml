@@ -8,6 +8,7 @@ name='noisetools'
 version='0.0.1'
 description='A Python toolbox with all the specialty signal analysis tools for my PhD.'
 readme='README.md'
+license = {file = "LICENSE"}
 authors=[
     {'name' = 'Josephine Siebert Pockelé', email='j.s.pockele@tudelft.nl'}
 ]
