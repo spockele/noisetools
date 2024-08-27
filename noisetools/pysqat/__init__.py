@@ -15,6 +15,8 @@ References
 
 """
 import matlab.engine as mateng
+import pandas as pd
+import numpy as np
 import errno
 import os
 
@@ -50,14 +52,14 @@ class PySQAT:
         self.eng.quit()
 
     @staticmethod
-    def _check_pa_paramters(wavfilename: str, dbfs: int | float, time_skip: int | float, loudness_field: int | float):
+    def _check_pa_paramters(wavfilename: str | os.PathLike, dbfs: int | float, time_skip: int | float, loudness_field: int | float):
         """
         Check the input parameters of the psychoacoustic_annoyance functions in this class
 
         Parameters
         ----------
-        wavfilename : str
-            wavfilename specifies the file name of a wav file to be processed.
+        wavfilename : str | os.PathLike
+            Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -82,7 +84,7 @@ class PySQAT:
         if not os.path.exists(wavfilename):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), wavfilename)
 
-    def psychoacoustic_annoyance_zwicker1999(self, wavfilename: str, dbfs: int | float = 94.,
+    def psychoacoustic_annoyance_zwicker1999(self, wavfilename: str | os.PathLike, dbfs: int | float = 94.,
                                              time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_Zwicker1999_from_wavfile.
@@ -92,8 +94,8 @@ class PySQAT:
 
         Parameters
         ----------
-        wavfilename : str
-            wavfilename specifies the file name of a wav file to be processed.
+        wavfilename : str | os.PathLike
+            Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -145,7 +147,7 @@ class PySQAT:
         dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
         return self.eng.PsychoacousticAnnoyance_Zwicker1999_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
 
-    def psychoacoustic_annoyance_di2016(self, wavfilename: str, dbfs: int | float = 94.,
+    def psychoacoustic_annoyance_di2016(self, wavfilename: str | os.PathLike, dbfs: int | float = 94.,
                                         time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_Di2016_from_wavfile.
@@ -155,8 +157,8 @@ class PySQAT:
 
         Parameters
         ----------
-        wavfilename : str
-            wavfilename specifies the file name of a wav file to be processed.
+        wavfilename : str | os.PathLike
+            Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -210,7 +212,7 @@ class PySQAT:
         dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
         return self.eng.PsychoacousticAnnoyance_Di2016_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
 
-    def psychoacoustic_annoyance_more2010(self, wavfilename: str, dbfs: int | float = 94.,
+    def psychoacoustic_annoyance_more2010(self, wavfilename: str | os.PathLike, dbfs: int | float = 94.,
                                           time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_More2010_from_wavfile.
@@ -220,8 +222,8 @@ class PySQAT:
 
         Parameters
         ----------
-        wavfilename : str
-            wavfilename specifies the file name of a wav file to be processed.
+        wavfilename : str | os.PathLike
+            Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
