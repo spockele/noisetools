@@ -14,6 +14,7 @@ References
     Zenodo, Jan. 29, 2024. doi: 10.5281/ZENODO.10580337.
 
 """
+import scipy.interpolate as spint
 import matlab.engine as mateng
 import pandas as pd
 import numpy as np
@@ -77,11 +78,13 @@ class PySQAT:
 
         # Loop over the metrics to be extracted.
         for metric, name in metrics.items():
-            # Extract the time and instantaneous SQM vectors.
+            # Extract time and SQM vectors.
             instantaneous_tme = np.array(pa_res[metric]['time'], dtype=float).flatten()
             instantaneous_sqm = np.array(pa_res[metric][f'Instantaneous{name}'], dtype=float).flatten()
-            # Interpolation of all metric to the PA time vector.
-            df.loc[:, metric] = np.interp(df.index, instantaneous_tme, instantaneous_sqm)
+            # Create interpolation function.
+            f = spint.interp1d(instantaneous_tme, instantaneous_sqm, kind='cubic', fill_value='extrapolate', )
+            # Interpolate the values to the PA time vector and store.
+            df.loc[:, metric] = f(df.index)
 
         return df
 
