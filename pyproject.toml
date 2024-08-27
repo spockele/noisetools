@@ -5,7 +5,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name='noisetools'
-version='0.1.0-dev0'
+version='0.0.1'
 description='A Python toolbox with all the specialty signal analysis tools for my PhD.'
 readme='README.md'
 authors=[
@@ -41,7 +41,9 @@ dev = [
     'pytest>=8.0.2',
     'twine>=5.0.0',
     'matplotlib>=3.8.3',
-    'pandas>=2.2.1'
+    'pandas>=2.2.1',
+    'sphinx',
+    'numpydoc',
 ]
 
 [project.urls]
