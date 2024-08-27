@@ -15,8 +15,7 @@ Translation layer to run SQAT with this toolbox. Contains SQAT v1.1 inside to al
 ---
 ## Copyright Notice
 
-Technische Universiteit Delft hereby disclaims all copyright interest in the program “WinTAur Lite”, a simplified wind turbine noise auralisation tool, based on WinTAur, written by the Author(s). 
-
+Technische Universiteit Delft hereby disclaims all copyright interest in the program “noisetools”, a Python toolbox for noise analysis in scientific research, written by the Author(s).\
 Henri Werij, Faculty of Aerospace Engineering, Technische Universiteit Delft.
 
 Copyright 2024 Josephine Pockelé
