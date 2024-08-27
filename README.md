@@ -32,6 +32,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and 
 limitations under the License.
 
+SQAT 1.1 [[1](#greco2023)], by Gil Felix Greco, Roberto Merino-Martínez, and Alejandro Osses, is included in this work under the terms of the CC BY-NC 4.0 license.
+
 ---
 ## References
 <a id="greco2023">[1]</a> Gil Felix Greco, Roberto Merino-Martínez, and Alejandro Osses, ‘SQAT: a sound quality analysis toolbox for MATLAB’. Zenodo, Jan. 29, 2024. doi: [10.5281/ZENODO.10580337](https://doi.org/10.5281/ZENODO.10580337).
