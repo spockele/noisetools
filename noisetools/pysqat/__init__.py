@@ -52,6 +52,40 @@ class PySQAT:
         self.eng.quit()
 
     @staticmethod
+    def extract_instantaneous_sqms(pa_res: dict, ) -> pd.DataFrame:
+        """
+        Extract the instantaneous values of the SQMs from the dictionary with results from
+        the PySQAT.psychoacoustic_annoyance_x() functions.
+
+        Parameters
+        ----------
+        pa_res : dict
+            Dictionary as it is returned by one of the three PySQAT.psychoacoustic_annoyance_x() functions.
+
+        Returns
+        -------
+        Pandas DataFrame with the time series of the instantaneous SQMs.
+        """
+        # Define the metrics and the names of their instantaneous SQM vector.
+        metrics = {'L': 'Loudness', 'S': 'Sharpness', 'R': 'Roughness', 'FS': 'FluctuationStrength', 'K': 'Tonality', }
+        # Define the column names for the pandas DataFrame
+        columns = ['PA'] + [metric for metric in metrics.keys() if metric in pa_res.keys()]
+
+        # Create the DataFrame and fill the PA column.
+        df = pd.DataFrame(index=np.array(pa_res['time'], dtype=float).flatten(), columns=columns)
+        df.loc[:, 'PA'] = np.array(pa_res[f'InstantaneousPA'], dtype=float).flatten()
+
+        # Loop over the metrics to be extracted.
+        for metric, name in metrics.items():
+            # Extract the time and instantaneous SQM vectors.
+            instantaneous_tme = np.array(pa_res[metric]['time'], dtype=float).flatten()
+            instantaneous_sqm = np.array(pa_res[metric][f'Instantaneous{name}'], dtype=float).flatten()
+            # Interpolation of all metric to the PA time vector.
+            df.loc[:, metric] = np.interp(df.index, instantaneous_tme, instantaneous_sqm)
+
+        return df
+
+    @staticmethod
     def _check_pa_paramters(wavfilename: str | os.PathLike, dbfs: int | float, time_skip: int | float, loudness_field: int | float):
         """
         Check the input parameters of the psychoacoustic_annoyance functions in this class
