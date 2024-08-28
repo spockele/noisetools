@@ -78,13 +78,14 @@ class PySQAT:
 
         # Loop over the metrics to be extracted.
         for metric, name in metrics.items():
-            # Extract time and SQM vectors.
-            instantaneous_tme = np.array(pa_res[metric]['time'], dtype=float).flatten()
-            instantaneous_sqm = np.array(pa_res[metric][f'Instantaneous{name}'], dtype=float).flatten()
-            # Create interpolation function.
-            f = spint.interp1d(instantaneous_tme, instantaneous_sqm, kind='cubic', fill_value='extrapolate', )
-            # Interpolate the values to the PA time vector and store.
-            df.loc[:, metric] = f(df.index)
+            if metric in df.columns:
+                # Extract time and SQM vectors.
+                instantaneous_tme = np.array(pa_res[metric]['time'], dtype=float).flatten()
+                instantaneous_sqm = np.array(pa_res[metric][f'Instantaneous{name}'], dtype=float).flatten()
+                # Create interpolation function.
+                f = spint.interp1d(instantaneous_tme, instantaneous_sqm, kind='cubic', fill_value='extrapolate', )
+                # Interpolate the values to the PA time vector and store.
+                df.loc[:, metric] = f(df.index)
 
         return df
 
