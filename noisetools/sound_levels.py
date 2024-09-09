@@ -60,7 +60,7 @@ def equivalent_pressure(signal: list | np.ndarray, fs: int | float | np.number, 
     t = np.linspace(0, signal.size / fs, signal.size)
 
     # Determine the equivalent pressure
-    return 1 / t[-1] * np.trapz(signal ** 2, t)
+    return 1 / t[-1] * np.trapezoid(signal ** 2, t)
 
 
 def ospl(signal: list | np.ndarray, fs: int | float | np.number, weighting: str = None) -> float:
