@@ -14,8 +14,9 @@ authors=[
 ]
 requires-python='>=3.9'
 dependencies=[
-    'numpy>=1.26.4',
+    'numpy>=2.0.0',
     'scipy>=1.12.0',
+    'matplotlib>=3.8.3',
     'matlabengine>=23.2.2'
 ]
 classifiers=[
@@ -41,7 +42,6 @@ include-package-data = true
 dev = [
     'pytest>=8.0.2',
     'twine>=5.0.0',
-    'matplotlib>=3.8.3',
     'pandas>=2.2.1',
     'sphinx',
     'numpydoc',
