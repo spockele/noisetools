@@ -1,6 +1,19 @@
 """Functions for interaction with HAWC2. Mostly focussed on Noise.
-
 """
+
+# Copyright 2024 Josephine Pockelé
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import pandas as pd
 import numpy as np
@@ -9,7 +22,7 @@ import os
 
 def read_hawc2_noise_psd(model_path: str | os.PathLike,
                          output_filename: str, obs: int,
-                         start_at: str = 'zero'
+                         start_at: str = 'zero',
                          ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Read the HAWC2 aero_noise module PSD output file for a specific simulation.
@@ -115,7 +128,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
 
 def extract_hawc2_noise(h2_noise: pd.DataFrame,
                         blade: str = 'All',
-                        model: str = 'All'
+                        model: str = 'All',
                         ) -> pd.DataFrame:
     """
     Extract the noise data from a specific blade and noise model from a HAWC2 output file.
@@ -152,7 +165,7 @@ def extract_hawc2_noise(h2_noise: pd.DataFrame,
 
 
 def hawc2_bldata_numformat(value: float,
-                           ljust: int = 9
+                           ljust: int = 9,
                            ) -> str:
     """
     Function to convert numbers to the right format for the HAWC2 BL input file.
@@ -187,7 +200,8 @@ def hawc2_bldata_numformat(value: float,
     return f'{sign}{num.ljust(ljust, "0")}E{exp_sign}{str(abs(exp)).zfill(2)}'
 
 
-def read_hawc2_bldata(fpath: str | os.PathLike) -> tuple[bool, pd.DataFrame, pd.DataFrame]:
+def read_hawc2_bldata(fpath: str | os.PathLike,
+                      ) -> tuple[bool, pd.DataFrame, pd.DataFrame]:
     """
     Read a HAWC2 boundary layer parameter file for Trailing edge noise.
 
@@ -317,8 +331,11 @@ def read_hawc2_bldata(fpath: str | os.PathLike) -> tuple[bool, pd.DataFrame, pd.
     return cfd, df, t_1_10
 
 
-def write_hawc2_bldata(fpath: str | os.PathLike, cfd: bool,
-                       bl_data: pd.DataFrame, t_1_10: pd.DataFrame) -> None:
+def write_hawc2_bldata(fpath: str | os.PathLike,
+                       cfd: bool,
+                       bl_data: pd.DataFrame,
+                       t_1_10: pd.DataFrame,
+                       ) -> None:
     """
     Write a HAWC2 boundary layer parameter file for Trailing edge noise.
 

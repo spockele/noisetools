@@ -1,5 +1,4 @@
-"""
-Functions related to the levels of measured or simulated sound signals.
+"""Functions related to the levels of measured or simulated sound signals.
 """
 
 # Copyright 2024 Josephine Pockelé
@@ -21,12 +20,13 @@ import numpy as np
 from .weighting_functions import weigh_signal
 
 
-__all__ = ['equivalent_pressure',
-           'ospl',
-           ]
+__all__ = ['equivalent_pressure', 'ospl', ]
 
 
-def equivalent_pressure(signal: list | np.ndarray, fs: int | float | np.number, weighting: str = None) -> float:
+def equivalent_pressure(signal: list | np.ndarray,
+                        fs: int | float | np.number,
+                        weighting: str = None,
+                        ) -> float:
     """
     Calculate the equivalent pressure (Pe^2) of the input sound signal.
 
@@ -41,8 +41,8 @@ def equivalent_pressure(signal: list | np.ndarray, fs: int | float | np.number, 
 
     Returns
     -------
-    float
-        Equivalent pressure in Pa^2 (weighted to selected weighting)
+    Equivalent pressure in Pa^2 (weighted to selected weighting)
+
     """
     # Convert signal to numpy array
     if not isinstance(signal, np.ndarray):
@@ -63,7 +63,10 @@ def equivalent_pressure(signal: list | np.ndarray, fs: int | float | np.number, 
     return 1 / t[-1] * np.trapezoid(signal ** 2, t)
 
 
-def ospl(signal: list | np.ndarray, fs: int | float | np.number, weighting: str = None) -> float:
+def ospl(signal: list | np.ndarray,
+         fs: int | float | np.number,
+         weighting: str = None,
+         ) -> float:
     """
     Calculate the Overall Sound Pressure Level of the input sound signal.
 
@@ -78,8 +81,8 @@ def ospl(signal: list | np.ndarray, fs: int | float | np.number, weighting: str 
 
     Returns
     -------
-    float
-        Overall sound pressure level in dB (weighted to selected weighting)
+    Overall sound pressure level in dB (weighted to selected weighting)
+
     """
     pe2 = equivalent_pressure(signal, fs, weighting)
 

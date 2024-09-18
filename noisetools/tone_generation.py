@@ -1,5 +1,4 @@
-"""
-Functions to generate tonal signals and write them to wav files
+"""Functions to generate tonal signals and write them to wav files
 """
 
 # Copyright 2024 Josephine Pockelé
@@ -20,34 +19,15 @@ import scipy.io as spio
 import numpy as np
 
 
-__all__ = ['generate_tone', 'generate_tones']
-
-
-# f_sampling = 51200  # (Hz)
-# f_signal = 500      # (Hz)
-# length = 2.         # (s)
-#
-#
-# if __name__ == '__main__':
-#     t = np.arange(0, length * f_sampling) / f_sampling
-#     x = (1e-1 * np.sin(2 * np.pi * f_signal * t) * 32767).astype(np.int16)
-#
-#     spio.wavfile.write(f'gui/assets/tone{f_signal}Hz.wav', f_sampling, x)
-#
-#     x_left = np.zeros((x.size, 2, )).astype(np.int16)
-#     x_left[:, 0] = x
-#     spio.wavfile.write(f'gui/assets/tone{f_signal}Hz_left.wav', f_sampling, x_left)
-#
-#     x_right = np.zeros((x.size, 2, )).astype(np.int16)
-#     x_right[:, 1] = x
-#     spio.wavfile.write(f'gui/assets/tone{f_signal}Hz_right.wav', f_sampling, x_right)
+__all__ = ['generate_tone', 'generate_tones', ]
 
 
 def generate_tone(f: int | float | np.number,
                   a: int | float | np.number,
                   phase: int | float | np.number,
                   length: int | float | np.number,
-                  fs: int | float | np.number = 48e3) -> tuple[np.ndarray, np.ndarray]:
+                  fs: int | float | np.number = 48e3
+                  ) -> tuple[np.ndarray, np.ndarray]:
     """
     Generate a tonal signal of a single frequency.
 
@@ -67,8 +47,8 @@ def generate_tone(f: int | float | np.number,
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
-        Time signal and generated tonal signal.
+    Time signal and generated tonal signal.
+
     """
     # Determine the time series
     t = np.linspace(0, length, int(fs * length))
@@ -82,7 +62,8 @@ def generate_tones(f: int | float | np.number | np.ndarray | list,
                    length: int | float | np.number,
                    a: int | float | np.number | np.ndarray | list = None,
                    phase: int | float | np.number | np.ndarray | list = None,
-                   fs: int | float | np.number = 48e3):
+                   fs: int | float | np.number = 48e3,
+                   ) -> tuple[np.ndarray, np.ndarray]:
     """
     Generate a signal composed of a number of tones.
 
@@ -102,6 +83,7 @@ def generate_tones(f: int | float | np.number | np.ndarray | list,
 
     Returns
     -------
+    Time signal and generated tonal signal.
 
     """
     # Check if the parameter f is valid and do necessary conversions to numpy.ndarray

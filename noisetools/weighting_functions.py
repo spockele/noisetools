@@ -1,5 +1,4 @@
-"""
-Spectral weighting functions for acoustic processing.
+"""Spectral weighting functions for acoustic processing.
 """
 
 # Copyright 2024 Josephine Pockelé
@@ -20,16 +19,11 @@ import scipy.signal as spsig
 import numpy as np
 
 
-__all__ = ['a_weighting_simons',
-           'a_weighting',
-           'c_weighting',
-           'weighting_poles',
-           'weighting_filter',
-           'weigh_signal'
-           ]
+__all__ = ['a_weighting_simons', 'a_weighting', 'c_weighting', 'weighting_poles', 'weighting_filter', 'weigh_signal', ]
 
 
-def a_weighting_simons(f: np.ndarray, ) -> np.ndarray:
+def a_weighting_simons(f: np.ndarray,
+                       ) -> np.ndarray:
     """
     A frequency weighting network A(f) defined by Equation 6.7 in Simons and Snellen [1]_.
 

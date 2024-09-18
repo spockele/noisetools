@@ -1,5 +1,4 @@
-"""
-Translation layer to run SQAT [1]_ through Python.
+"""Translation layer to run SQAT [1]_ through Python.
 
 Written for the following combination of MATLAB, Python and matlabengine versions:
 - MATLAB release R2023b
@@ -36,7 +35,8 @@ class PySQAT:
     RuntimeError
         If the SQAT directory is not where it is expected to be.
     """
-    def __init__(self, ) -> None:
+    def __init__(self,
+                 ) -> None:
         if not os.path.isdir(SQAT_PATH):
             raise RuntimeError(f'SQAT directory is missing in the noisetools installation! '
                                f'Make sure noisetools was installed correctly.'
@@ -46,14 +46,16 @@ class PySQAT:
         self.eng.cd(SQAT_PATH)
         self.eng.startup_SQAT(nargout=0)
 
-    def stop_sqat(self) -> None:
+    def stop_sqat(self
+                  ) -> None:
         """
         Stop the internal MATLAB engine. Calling this function renders this instance of PySQAT useless.
         """
         self.eng.quit()
 
     @staticmethod
-    def extract_instantaneous_sqms(pa_res: dict, ) -> pd.DataFrame:
+    def extract_instantaneous_sqms(pa_res: dict,
+                                   ) -> pd.DataFrame:
         """
         Extract the instantaneous values of the SQMs from the dictionary with results from
         the PySQAT.psychoacoustic_annoyance_x() functions.
@@ -66,6 +68,7 @@ class PySQAT:
         Returns
         -------
         Pandas DataFrame with the time series of the instantaneous SQMs.
+
         """
         # Define the metrics and the names of their instantaneous SQM vector.
         metrics = {'L': 'Loudness', 'S': 'Sharpness', 'R': 'Roughness', 'FS': 'FluctuationStrength', 'K': 'Tonality', }
@@ -90,7 +93,11 @@ class PySQAT:
         return df
 
     @staticmethod
-    def _check_pa_paramters(wavfilename: str | os.PathLike, dbfs: int | float, time_skip: int | float, loudness_field: int | float):
+    def _check_pa_paramters(wavfilename: str | os.PathLike,
+                            dbfs: int | float,
+                            time_skip: int | float,
+                            loudness_field: int | float
+                            ) -> None:
         """
         Check the input parameters of the psychoacoustic_annoyance functions in this class
 
@@ -111,6 +118,7 @@ class PySQAT:
         loudness_field : number, optional
             Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
             more info. NOTE: value should be convertible to an integer.
+
         """
         if not isinstance(dbfs, int) and not dbfs.is_integer():
             raise ValueError('Value of parameter "dbfs" should be an integer.')
@@ -150,28 +158,29 @@ class PySQAT:
 
         Returns
         -------
-        dict :
-            Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs with the PA results:
-                - InstantaneousPA: instantaneous quantity (unity) vs time
-                - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
-                  signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
-                - time : time vector in seconds
-                - wfr : fluctuation strength and roughness weighting function (not squared)
-                - ws : sharpness and loudness weighting function (not squared)
-                - Statistics: dict with the following keys:
-                    - PAmean : mean value of instantaneous fluctuation strength (unit)
-                    - PAstd : standard deviation of instantaneous fluctuation strength (unit)
-                    - PAmax : maximum of instantaneous fluctuation strength (unit)
-                    - PAmin : minimum of instantaneous fluctuation strength (unit)
-                    - PAx : x percentile of the PA metric exceeded during x percent of the time
+        Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs
+        with the PA results:
+            - InstantaneousPA: instantaneous quantity (unity) vs time
+            - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
+              signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
+            - time : time vector in seconds
+            - wfr : fluctuation strength and roughness weighting function (not squared)
+            - ws : sharpness and loudness weighting function (not squared)
+            - Statistics: dict with the following keys:
+                - PAmean : mean value of instantaneous fluctuation strength (unit)
+                - PAstd : standard deviation of instantaneous fluctuation strength (unit)
+                - PAmax : maximum of instantaneous fluctuation strength (unit)
+                - PAmin : minimum of instantaneous fluctuation strength (unit)
+                - PAx : x percentile of the PA metric exceeded during x percent of the time
 
-            Also contains the following dicts under keys:
-                -  L : dict with Loudness results, similar structure to the PA results
-                -  S : dict with Sharpness, similar structure to the PA results
-                -  R : dict with roughness results, similar structure to the PA results
-                - FS : dict with fluctuation strength results, similar structure to the PA results
+        Also contains the following dicts under keys:
+            -  L : dict with Loudness results, similar structure to the PA results
+            -  S : dict with Sharpness, similar structure to the PA results
+            -  R : dict with roughness results, similar structure to the PA results
+            - FS : dict with fluctuation strength results, similar structure to the PA results
 
-            NOTE: values will be of a type according to the MATLAB help pages: https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
+        NOTE: values will be of a type according to the MATLAB help pages:
+        https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
 
         Raises
         ------
@@ -213,30 +222,31 @@ class PySQAT:
 
         Returns
         -------
-        dict :
-            Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs with the PA results:
-                - InstantaneousPA: instantaneous quantity (unity) vs time
-                - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
-                  signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
-                - time : time vector in seconds
-                - wt : tonality and loudness weighting function (not squared)
-                - wfr : fluctuation strength and roughness weighting function (not squared)
-                - ws : sharpness and loudness weighting function (not squared)
-                - Statistics: dict with the following keys:
-                    - PAmean : mean value of instantaneous fluctuation strength (unit)
-                    - PAstd : standard deviation of instantaneous fluctuation strength (unit)
-                    - PAmax : maximum of instantaneous fluctuation strength (unit)
-                    - PAmin : minimum of instantaneous fluctuation strength (unit)
-                    - PAx : x percentile of the PA metric exceeded during x percent of the time
+        Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs
+        with the PA results:
+            - InstantaneousPA: instantaneous quantity (unity) vs time
+            - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
+              signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
+            - time : time vector in seconds
+            - wt : tonality and loudness weighting function (not squared)
+            - wfr : fluctuation strength and roughness weighting function (not squared)
+            - ws : sharpness and loudness weighting function (not squared)
+            - Statistics: dict with the following keys:
+                - PAmean : mean value of instantaneous fluctuation strength (unit)
+                - PAstd : standard deviation of instantaneous fluctuation strength (unit)
+                - PAmax : maximum of instantaneous fluctuation strength (unit)
+                - PAmin : minimum of instantaneous fluctuation strength (unit)
+                - PAx : x percentile of the PA metric exceeded during x percent of the time
 
-            Also contains the following dicts under keys:
-                -  L : dict with Loudness results, similar structure to the PA results
-                -  S : dict with Sharpness, similar structure to the PA results
-                -  R : dict with roughness results, similar structure to the PA results
-                - FS : dict with fluctuation strength results, similar structure to the PA results
-                -  K : dict with tonality results, similar structure to the PA results
+        Also contains the following dicts under keys:
+            -  L : dict with Loudness results, similar structure to the PA results
+            -  S : dict with Sharpness, similar structure to the PA results
+            -  R : dict with roughness results, similar structure to the PA results
+            - FS : dict with fluctuation strength results, similar structure to the PA results
+            -  K : dict with tonality results, similar structure to the PA results
 
-            NOTE: values will be of a type according to the MATLAB help pages: https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
+        NOTE: values will be of a type according to the MATLAB help pages:
+        https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
 
         Raises
         ------
@@ -278,30 +288,31 @@ class PySQAT:
 
         Returns
         -------
-        dict :
-            Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs with the PA results:
-                - InstantaneousPA: instantaneous quantity (unity) vs time
-                - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
-                  signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
-                - time : time vector in seconds
-                - wt : tonality and loudness weighting function (not squared)
-                - wfr : fluctuation strength and roughness weighting function (not squared)
-                - ws : sharpness and loudness weighting function (not squared)
-                - Statistics: dict with the following keys:
-                    - PAmean : mean value of instantaneous fluctuation strength (unit)
-                    - PAstd : standard deviation of instantaneous fluctuation strength (unit)
-                    - PAmax : maximum of instantaneous fluctuation strength (unit)
-                    - PAmin : minimum of instantaneous fluctuation strength (unit)
-                    - PAx : x percentile of the PA metric exceeded during x percent of the time
+        Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs
+        with the PA results:
+            - InstantaneousPA: instantaneous quantity (unity) vs time
+            - ScalarPA : PA (scalar value) computed using the percentile values of each metric. NOTE: if the
+              signal's length is smaller than 2s, this is the only output as no time-varying PA is calculated.
+            - time : time vector in seconds
+            - wt : tonality and loudness weighting function (not squared)
+            - wfr : fluctuation strength and roughness weighting function (not squared)
+            - ws : sharpness and loudness weighting function (not squared)
+            - Statistics: dict with the following keys:
+                - PAmean : mean value of instantaneous fluctuation strength (unit)
+                - PAstd : standard deviation of instantaneous fluctuation strength (unit)
+                - PAmax : maximum of instantaneous fluctuation strength (unit)
+                - PAmin : minimum of instantaneous fluctuation strength (unit)
+                - PAx : x percentile of the PA metric exceeded during x percent of the time
 
-            Also contains the following dicts under keys:
-                -  L : dict with Loudness results, similar structure to the PA results
-                -  S : dict with Sharpness, similar structure to the PA results
-                -  R : dict with roughness results, similar structure to the PA results
-                - FS : dict with fluctuation strength results, similar structure to the PA results
-                -  K : dict with tonality results, similar structure to the PA results
+        Also contains the following dicts under keys:
+            -  L : dict with Loudness results, similar structure to the PA results
+            -  S : dict with Sharpness, similar structure to the PA results
+            -  R : dict with roughness results, similar structure to the PA results
+            - FS : dict with fluctuation strength results, similar structure to the PA results
+            -  K : dict with tonality results, similar structure to the PA results
 
-            NOTE: values will be of a type according to the MATLAB help pages: https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
+        NOTE: values will be of a type according to the MATLAB help pages:
+        https://nl.mathworks.com/help/matlab/matlab_external/handle-data-returned-from-matlab-to-python.html
 
         Raises
         ------
