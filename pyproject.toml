@@ -17,10 +17,9 @@ dependencies=[
     'numpy>=2.0.0',
     'scipy>=1.12.0',
     'matplotlib>=3.8.3',
-    'matlabengine>=23.2.2'
 ]
 classifiers=[
-    'Development Status :: 1 - Planning',
+    'Development Status :: 3 - Alpha',
     'Intended Audience :: Education',
     'Intended Audience :: Science/Research',
     'Natural Language :: English',
@@ -39,6 +38,9 @@ classifiers=[
 include-package-data = true
 
 [project.optional-dependencies]
+pysqat = [
+    'matlabengine>=23.2.2',
+]
 dev = [
     'pytest>=8.0.2',
     'twine>=5.0.0',
