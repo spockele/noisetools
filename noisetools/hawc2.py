@@ -20,8 +20,46 @@ import numpy as np
 import os
 
 
+def read_hawc2_res(model_path: str | os.PathLike,
+                   output_filename: str,
+                   ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Read the HAWC2 simulation output files for a given file name. The HAWC2 output has to be set to ASCII format.
+
+    Parameters
+    ----------
+    model_path: str | os.PathLike
+        Path to the HAWC2 model of which to read the results.
+    output_filename: str
+        Relative path to the output files, without file extensions. (same as parameter output.filename in HAWC2 [1]_)
+
+    Returns
+    -------
+    - DataFrame with info from the sel file (channel table).
+    - DataFrame with all data from simulation.
+
+    References
+    ----------
+    .. [1] T. J. Larsen and A. M. Hansen, `How 2 HAWC2, the user's manual', DTU, Department of Wind Energy, Roskilde,
+        Denmark, Technical Report Riso-R-1597(ver. 13.0)(EN), May 2023. Available online:
+        http://tools.windenergy.dtu.dk/HAWC2/manual/
+
+    """
+    # Set the full file path.
+    fname = os.path.join(model_path, output_filename)
+    # Read the sel file
+    sel_file = pd.read_fwf(fname + '.sel', skiprows=12, header=None, skipfooter=1, index_col=0,
+                           widths=[12, 32, 10, 120])
+    # Read the data file and shift the column numbers to correspond to the channel numbers
+    dat_file = pd.read_csv(fname + '.dat', delimiter='\s+', header=None, index_col=0)
+    dat_file.columns = dat_file.columns + 1
+
+    return sel_file, dat_file
+
+
 def read_hawc2_noise_psd(model_path: str | os.PathLike,
-                         output_filename: str, obs: int,
+                         output_filename: str,
+                         obs: int,
                          start_at: str = 'zero',
                          ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -44,6 +82,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     -------
     Two DataFrames with all the data from the HAWC2 output file.
     0: Noise, 1: Header data over time.
+
     """
     # Define the full file path
     fpath = os.path.join(model_path, 'res', f'{output_filename}_noise_psd_Obs{str(obs).zfill(3)}.out')
@@ -106,6 +145,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
         Returns
         -------
         Boolean indicating if row is to be skipped.
+
         """
         data_idx = row_idx - header_length
         block_idx = data_idx // rows_per_t
@@ -180,6 +220,7 @@ def hawc2_bldata_numformat(value: float,
     Returns
     -------
     String with the formatted number.
+
     """
     # Separate the sign of the number.
     sign = ' ' if value >= 0 else '-'
