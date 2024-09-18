@@ -14,11 +14,16 @@ References
 
 """
 import scipy.interpolate as spint
-import matlab.engine as mateng
 import pandas as pd
 import numpy as np
 import errno
 import os
+
+try:
+    import matlab.engine as mateng
+except ImportError as e:
+    raise ImportError('A problem is found while importing matlabengine. '
+                      'Make sure you install noisetools[pysqat], to be able to use the PySQAT package.')
 
 
 SQAT_PATH = os.path.join(os.path.dirname(__file__), 'SQAT-1.1')
