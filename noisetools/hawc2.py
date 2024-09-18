@@ -7,7 +7,153 @@ import numpy as np
 import os
 
 
-def num_format(value: float, ljust: int = 9) -> str:
+def read_hawc2_noise_psd(model_path: str | os.PathLike,
+                         output_filename: str, obs: int,
+                         start_at: str = 'zero'
+                         ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Read the HAWC2 aero_noise module PSD output file for a specific simulation.
+
+    Parameters
+    ----------
+    model_path: str | os.PathLike
+        Path to the HAWC2 model.
+    output_filename: str
+        The output_filename set in the aero.aero_noise section of the HAWC2 input file.
+    obs: int
+        Observer number to load the output from.
+    start_at: str, optional (default='zero')
+        Indicate what the start time of the time signal should be:
+            - 'zero': start the time at t=0 s
+            - 'hawc2': start the time at the first HAWC2 noise timestep
+
+    Returns
+    -------
+    Two DataFrames with all the data from the HAWC2 output file.
+    0: Noise, 1: Header data over time.
+    """
+    # Define the full file path
+    fpath = os.path.join(model_path, 'res', f'{output_filename}_noise_psd_Obs{str(obs).zfill(3)}.out')
+    # Define the header length explicitly and define the noise models.
+    header_length = 6
+    noise_models = ['All', 'TI', 'TE', 'ST', 'TP', ]
+    # Open the file and read the lines.
+    with open(fpath, 'r') as f:
+        lines = f.readlines()
+
+    # Read which noise mode is used.
+    noise_mode = int(lines[0].strip('\n')[-1])
+    # Define the blade numbers for the DataFrame columns based on the noise output mode.
+    if noise_mode == 3:
+        n_blades = 3
+        blades = ['All', 'Blade 1', 'Blade 2', 'Blade 3', ]
+    elif noise_mode == 4:
+        n_blades = int(lines[1].strip('\n')[19:21])
+        blades = ['All'] + [f'Blade {n + 1}' for n in range(n_blades)]
+    # Only modes 3 and 4 are supported explicitly, not sure about mode 1...
+    else:
+        raise NotImplementedError('Output files of noise_mode other than 3 and 4 '
+                                  'are not supported by this function.')
+    # Read the header from the file.
+    header = lines[:header_length]
+    # Check the number of frequencies.
+    nfreq = int(header[4][-4:])
+    # Define the number of rows per time step.
+    rows_per_t = nfreq + 2
+
+    # Read the timestamp headers separately.
+    t_lines = lines[header_length::rows_per_t]
+    # Define the column numbers with the per blade azimuth angles (necessary to support noise_mode=4).
+    cols = [21 + i for i in range(n_blades)]
+    # Create a dataframe from the header lines. Select the correct data columns directly.
+    df_header = pd.DataFrame([line.split() for line in t_lines])
+    df_header = df_header.loc[:, [1, 5, 6, 7, 11, ] + cols + [cols[-1] + 4]].astype(np.float64)
+    # Define the column names.
+    df_header.columns = ['t (s)', 'hub x (m)', 'hub y (m)', 'hub z (m)', 'v (m/s)',
+                         ] + [f'azim {i} (deg)' for i in range(n_blades)] + ['r (m)']
+    # Change the index to the time column.
+    df_header: pd.DataFrame = df_header.set_index('t (s)')
+    if start_at.lower() == 'zero':
+        df_header.index = df_header.index - df_header.index[0]
+    elif not start_at.lower() == 'hawc2':
+        raise ValueError(f"Invalid entry for 'start_at'. Got {start_at}, but expected 'zero' or 'hawc2'.")
+    # Extract the timestamps to use in the multi-index of the noise DataFrame.
+    dft = np.repeat(df_header.index, nfreq)
+
+    def skiprows_func(row_idx: int) -> bool:
+        """
+        !! INTERNAL FUNCTION OF read_hawc2_noise_psd() !!
+        Function for pd.read_csv to determine which rows of the HAWC2 aero_noise output file to skip.
+
+        Parameters
+        ----------
+        row_idx: int
+            Index of the row to determine a skip
+
+        Returns
+        -------
+        Boolean indicating if row is to be skipped.
+        """
+        data_idx = row_idx - header_length
+        block_idx = data_idx // rows_per_t
+        f_idx = data_idx - block_idx * rows_per_t
+
+        return row_idx < header_length or f_idx < 1
+
+    # Read the noise data separately from the file.
+    df: pd.DataFrame = pd.read_csv(fpath, header=None, index_col=None, delimiter='\s+',
+                                   skiprows=lambda x: skiprows_func(x), )
+    # Create a multi-index to support the 3D nature of the spectrogram output.
+    df.index = pd.MultiIndex.from_arrays([dft, df.loc[:, 0], ], names=['t (s)', 'f (Hz)'])
+    # Exclude the first column, as it is now one of the indexes.
+    df = df.loc[:, 1:]
+    # Define the columns through a product multi-index of the blades and noise models.
+    df.columns = pd.MultiIndex.from_product([blades, noise_models], names=['Blade', 'Noise Model'])
+
+    return df, df_header
+
+
+def extract_hawc2_noise(h2_noise: pd.DataFrame,
+                        blade: str = 'All',
+                        model: str = 'All'
+                        ) -> pd.DataFrame:
+    """
+    Extract the noise data from a specific blade and noise model from a HAWC2 output file.
+
+    Parameters
+    ----------
+    h2_noise: pandas.DataFrame
+        Pandas DataFrame, as obtained with read_hawc2_noise_psd.
+    blade: str, optional (default='All')
+        String indicator of the blade for which to extract the noise data.
+            - 'All': noise output for the whole turbine.
+            - 'Blade <x>': noise output for blade number <x>. For noise generated in mode 3: <x> in [1, 2, 3],
+                noise generated in noise mode 4: <x> in [1, ... , n_azim].
+    model: str, optional (default='All')
+        String indicator of the noise model for which to extract the noise data.
+            - 'All': the combined result with all models.
+            - 'TE': turbulent boundary layer trailing-edge noise.
+            - 'TI': Turbulent inflow noise.
+            - 'ST': Stall noise.
+            - 'TP': Tip noise. (not implemented in HAWC2 version <= 13.1.0)
+
+    Returns
+    -------
+    A pandas DataFrame with the spectrogram of the selected noise model, and wind turbine blade.
+    Index (axis=0) is the frequency axis, Columns (axis=1) is the time axis.
+
+    """
+    # Get the selected data from the DataFrame.
+    extract: pd.Series = h2_noise[blade][model]
+    # Reshape from the MultiIndexed Series (N_f * N_t, 1) to a simply indexed DataFrame (N_f, N_t).
+    extract: pd.DataFrame = extract.reset_index().pivot(index='f (Hz)', columns='t (s)', values=model)
+
+    return extract
+
+
+def hawc2_bldata_numformat(value: float,
+                           ljust: int = 9
+                           ) -> str:
     """
     Function to convert numbers to the right format for the HAWC2 BL input file.
 
@@ -232,9 +378,9 @@ def write_hawc2_bldata(fpath: str | os.PathLike, cfd: bool,
         # Add the actual thickness ration in percent.
         # Note: the HAWC2 thickness correction requires the two thickness values in the comment of this line,
         #   after character nr. 48. Make sure there is nothing else past character nr. 48.
-        h2_te_file.append(f' {num_format(thickness, ljust=6)}  # [% Chord] - At 1 and 10% Chord: '
-                          f'{num_format(t_1_10.loc[thickness, 1], ljust=6)} '
-                          f'{num_format(t_1_10.loc[thickness, 10], ljust=6)}\n')
+        h2_te_file.append(f' {hawc2_bldata_numformat(thickness, ljust=6)}  # [% Chord] - At 1 and 10% Chord: '
+                          f'{hawc2_bldata_numformat(t_1_10.loc[thickness, 1], ljust=6)} '
+                          f'{hawc2_bldata_numformat(t_1_10.loc[thickness, 10], ljust=6)}\n')
 
         # Extract the list of Reynolds number for this thickness.
         reynolds_numbers = bl_data.loc[thickness, :].index.unique(0)
@@ -248,21 +394,23 @@ def write_hawc2_bldata(fpath: str | os.PathLike, cfd: bool,
             angles_of_attack = bl_data.loc[thickness, :].loc[re, :].index.unique(0)
             # Add the header with Reynolds number and number of AoAs to the BL input file.
             h2_te_file.append(f'# Reynolds Number no. {ri + 1} (Thickness no. {ti + 1})\n')
-            h2_te_file.append(f' {num_format(re, ljust=6)}  # [-]\n')
+            h2_te_file.append(f' {hawc2_bldata_numformat(re, ljust=6)}  # [-]\n')
             h2_te_file.append(f'# Number of Angles of Attack (Reynolds Number no. {ri + 1}, Thickness no. {ti + 1})\n')
             h2_te_file.append(f'  {str(angles_of_attack.size).rjust(2, " ")}\n')
 
             # Loop over the angles of attack.
             for ai, aoa in enumerate(angles_of_attack):
                 # Add line with converted AoA.
-                h2_te_file.append(f' {num_format(aoa, ljust=6)}  # AoA {ai + 1} [deg]\n')
+                h2_te_file.append(f' {hawc2_bldata_numformat(aoa, ljust=6)}  # AoA {ai + 1} [deg]\n')
                 # Create the string representation of the data for the suction side for this t, Re, AoA
                 data_suct = bl_data.loc[thickness, :].loc[re, :].loc[aoa, :].loc["suction", :]
-                data_suct = data_suct.to_string(header=False, index=False, float_format=num_format).split('\n')
+                data_suct = data_suct.to_string(header=False, index=False,
+                                                float_format=hawc2_bldata_numformat).split('\n')
                 h2_te_file.append(f' {" ".join(data_suct)}\n')
                 # Create the string representation of the data for the pressure side for this t, Re, AoA
                 data_pres = bl_data.loc[thickness, :].loc[re, :].loc[aoa, :].loc["pressure", :]
-                data_pres = data_pres.to_string(header=False, index=False, float_format=num_format).split('\n')
+                data_pres = data_pres.to_string(header=False, index=False,
+                                                float_format=hawc2_bldata_numformat).split('\n')
                 h2_te_file.append(f' {" ".join(data_pres)}\n')
 
     # Write all these lines to the data file.
