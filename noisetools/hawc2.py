@@ -64,7 +64,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
                          output_filename: str,
                          obs: int,
                          start_at: str = 'zero',
-                         ) -> tuple[pd.DataFrame, pd.DataFrame]:
+                         ) -> tuple[pd.DataFrame, pd.DataFrame, list[float]]:
     """
     Read the HAWC2 aero_noise module PSD output file for a specific simulation.
 
@@ -109,12 +109,13 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     else:
         raise NotImplementedError('Output files of noise_mode other than 3 and 4 '
                                   'are not supported by this function.')
-    # Read the header from the file.
-    header = lines[:header_length]
+
     # Check the number of frequencies.
-    nfreq = int(header[4][-4:])
+    nfreq = int(lines[4][-4:])
     # Define the number of rows per time step.
     rows_per_t = nfreq + 2
+    # Extract the coordinate of the observer.
+    obs_pos = [float(coo) for coo in lines[5].split()[-3:]]
 
     # Read the timestamp headers separately.
     t_lines = lines[header_length::rows_per_t]
@@ -166,7 +167,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     # Define the columns through a product multi-index of the blades and noise models.
     df.columns = pd.MultiIndex.from_product([blades, noise_models], names=['Blade', 'Noise Model'])
 
-    return df, df_header
+    return df, df_header, obs_pos
 
 
 def extract_hawc2_noise(h2_noise: pd.DataFrame,
