@@ -126,7 +126,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     df_header = df_header.loc[:, [1, 5, 6, 7, 11, ] + cols + [cols[-1] + 4]].astype(np.float64)
     # Define the column names.
     df_header.columns = ['t (s)', 'hub x (m)', 'hub y (m)', 'hub z (m)', 'v (m/s)',
-                         ] + [f'azim {i} (deg)' for i in range(n_blades)] + ['r (m)']
+                         ] + [f'azim {n + 1} (deg)' for n in range(n_blades)] + ['r (m)']
     # Change the index to the time column.
     df_header: pd.DataFrame = df_header.set_index('t (s)')
     if start_at.lower() == 'zero':
