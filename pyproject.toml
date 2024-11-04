@@ -39,7 +39,7 @@ include-package-data = true
 
 [project.optional-dependencies]
 pysqat = [
-    'matlabengine>=23.2.2',
+    'matlabengine==23.2.2',
 ]
 dev = [
     'pytest>=8.0.2',
