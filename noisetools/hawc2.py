@@ -60,6 +60,29 @@ def read_hawc2_res(model_path: str | os.PathLike,
     return sel_file, dat_file
 
 
+def fname_hawc2_noise_psd(model_path: str | os.PathLike,
+                          output_filename: str,
+                          obs: int,) -> str:
+    """
+    Return the file name of a HAWC2 noise PSD file, given the inputs for a HAWC2 noise simulation.
+
+    Parameters
+    ----------
+    model_path: str | os.PathLike
+        Path to the HAWC2 model.
+    output_filename: str
+        The output_filename set in the aero.aero_noise section of the HAWC2 input file.
+    obs: int
+        Observer number to load the output from.
+
+    Returns
+    -------
+    String with the full path to an output file.
+
+    """
+    return os.path.join(model_path, 'res', f'{output_filename}_noise_psd_Obs{str(obs).zfill(3)}.out')
+
+
 def read_hawc2_noise_psd(model_path: str | os.PathLike,
                          output_filename: str,
                          obs: int,
@@ -88,7 +111,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
 
     """
     # Define the full file path
-    fpath = os.path.join(model_path, 'res', f'{output_filename}_noise_psd_Obs{str(obs).zfill(3)}.out')
+    fpath = fname_hawc2_noise_psd(model_path, output_filename, obs)
     # Define the header length explicitly and define the noise models.
     header_length = 6
     noise_models = ['All', 'TI', 'TE', 'ST', 'TP', ]
