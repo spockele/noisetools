@@ -11,6 +11,7 @@ A Python toolbox with all the specialty signal analysis tools for my PhD.
 
 ### pySQAT
 Translation layer to run SQAT with this toolbox. Contains SQAT v1.1 inside to allow for running [[1](#greco2023)].
+Currently only works with MATLAB R2023b - Python==3.11 - matlabengine==23.2.
 
 ---
 ## Copyright Notice
