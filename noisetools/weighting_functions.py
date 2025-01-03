@@ -286,11 +286,14 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    weighting_table = pd.read_csv('weighting_table.csv', header=0, index_col=0, delimiter=';').replace(np.inf, 1e12)
+    weighting_table = pd.read_csv('weighting_table.csv',
+                                  header=0, index_col=0, delimiter=';').replace(np.inf, 1e12)
 
     plt.figure(1)
     plt.semilogx(weighting_table.index, a_weighting(weighting_table.index.to_numpy()))
-    plt.errorbar(x=weighting_table.index, y=weighting_table['a'], yerr=(weighting_table['limit 2-'], weighting_table['limit 2+'], ), fmt='k.', capsize=2)
+    plt.errorbar(x=weighting_table.index, y=weighting_table['a'],
+                 yerr=(weighting_table['limit 2-'], weighting_table['limit 2+'], ),
+                 fmt='k.', capsize=2)
 
     # ba/tf type
     ba = weighting_filter('a', analog=True, output='ba')
@@ -323,7 +326,9 @@ if __name__ == '__main__':
 
     plt.figure(2)
     plt.semilogx(weighting_table.index, c_weighting(weighting_table.index.to_numpy()))
-    plt.errorbar(x=weighting_table.index, y=weighting_table['c'], yerr=(weighting_table['limit 1-'], weighting_table['limit 1+'], ), fmt='k.', capsize=2)
+    plt.errorbar(x=weighting_table.index, y=weighting_table['c'],
+                 yerr=(weighting_table['limit 1-'], weighting_table['limit 1+'], ),
+                 fmt='k.', capsize=2)
 
     # ba/tf type
     ba = weighting_filter('c', analog=True, output='ba')
