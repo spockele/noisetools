@@ -1,0 +1,31 @@
+[conditions]
+    temp = float(min=-50.0, max=50.0, default=15.0)
+    pres = float(default=101325.)
+    dens = float(default=1.225)
+    humi = float(min=0., max=100., default=80.)
+    grnd = option('snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood', default='grass')
+
+[hawc2_noise]
+    run = boolean(default=False)
+    base_htc = string()
+    time = float_list(min=2, max=2)
+
+    simulation_dt = float(min=1e-12, default=0.01)
+    noise_dt = float(min=1e-12, default=0.5)
+
+    hub_height = float(min=0.)
+    ws = float(min=0.)
+    shear = float_list(min=2, max=2, default=list(3, 0.2))
+    wdir = float_list(min=3, max=3, default=list(0., 0., 0.))
+    ti = float(min=0., max=100.)
+    z0 = float(min=1e-12, default=1.0)
+    bldata = string()
+
+[observers]
+    [[__many__]]
+        name = string()
+        pos = float_list(min=3, max=3)
+
+[reconstruction]
+    fs = integer(min=0, default=44100)
+    overlap = integer(min=2, default=3)
