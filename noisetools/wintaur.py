@@ -23,7 +23,7 @@ import os
 from . import hawc2 as h2
 
 # Define the WinTAurCase configspec.
-configspec_path = os.path.join(os.path.dirname(__file__), 'wintaur_lite_configspec.aurlite')
+configspec_path = os.path.join(os.path.dirname(__file__), 'configspec.aurlite')
 configspec = ConfigObj(configspec_path, interpolation=False, list_values=False, _inspec=True)
 # Create a configobj.validate.Validator instance.
 validator = Validator()
@@ -166,11 +166,15 @@ class WinTAurProject:
                  overlap: int = 3
                  ) -> None:
         """
+        Creates a new case in this project.
 
         Parameters
         ----------
         case_name: str | os.PathLike
             Name of the case file as a path relative to the project folder. Without the .aurlite file extension.
+
+        Conditions Parameters
+        ---
         temp: float, optional (default = 15.)
             Atmospheric temperature used for atmospheric attenuation.
             Default value  is ISA temperature at 0m [1]_ .
@@ -185,6 +189,9 @@ class WinTAurProject:
             Default value is based on KNMI climate information [2]_ .
         grnd: str, optional (default = 'grass')
             Ground type used for the ground effect calculation.
+
+        HAWC2 Parameters
+        ---
         run: bool, optional (default = False)
             Indication to run the HAWC2 simulation.
         base_htc: str, optional (default = None)
@@ -220,10 +227,16 @@ class WinTAurProject:
         bldata: str, optional (default = None)
             Filename of the boundary layer data file, relative to the project path.
             Required parameter when run = True.
+
+        Observer parameters
+        ---
         observers: list[list[str, float, float, float]], optional (default = None)
             List of observation points in the HAWC2 global coordinate system.
             Each point is a list containing: [name string, x, y, z].
             Required parameter when run = True.
+
+        Reconstruction parameters
+        ---
         fs: int, optional (default = 44100)
             Sampling frequency of the output wav files.
         overlap: int, optional (default = 3)
@@ -276,7 +289,7 @@ class WinTAurProject:
         new_case['reconstruction']['overlap'] = overlap
 
         new_case.validate_case()
+        new_case.write()
 
-        new_case.validate_case()
         self.case_names.append(case_name)
         self.cases.append(new_case)
