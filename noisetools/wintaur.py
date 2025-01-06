@@ -253,8 +253,10 @@ class WinTAurProject:
             [Online]. Available: http://tools.windenergy.dtu.dk/HAWC2/manual/
 
         """
+        # Create the new Case instance.
         new_case = WinTAurCase(self.project_path, case_name, new=True)
 
+        # Add the conditions parameters.
         new_case['conditions'] = {}
         new_case['conditions']['temp'] = temp
         new_case['conditions']['pres'] = pres
@@ -262,6 +264,7 @@ class WinTAurProject:
         new_case['conditions']['humi'] = humi
         new_case['conditions']['grnd'] = grnd
 
+        # Add the HAWC2 parameters, if hawc2_noise.run = True.
         if run:
             new_case['hawc2_noise'] = {}
             new_case['hawc2_noise']['run'] = run
@@ -277,6 +280,7 @@ class WinTAurProject:
             new_case['hawc2_noise']['z0'] = z0
             new_case['hawc2_noise']['bldata'] = bldata
 
+        # Add the observer locations if they are defined.
         if observers is not None:
             new_case['observers'] = {}
             for observer in observers:
@@ -284,12 +288,16 @@ class WinTAurProject:
                 new_case['observers'][observer[0]]['name'] = observer[0]
                 new_case['observers'][observer[0]]['pos'] = observer[1:4]
 
+        # Add the reconstruction parameters.
         new_case['reconstruction'] = {}
         new_case['reconstruction']['fs'] = fs
         new_case['reconstruction']['overlap'] = overlap
 
+        # Validate the case file. This will throw errors for invalid entries.
         new_case.validate_case()
+        # Write the case file to disk.
         new_case.write()
 
+        # Add the case to the project level lists.
         self.case_names.append(case_name)
         self.cases.append(new_case)
