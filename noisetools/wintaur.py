@@ -17,7 +17,6 @@
 
 from configobj import ConfigObj, flatten_errors, get_extra_values
 from configobj.validate import Validator, VdtMissingValue
-import numpy as np
 import warnings
 import os
 
@@ -128,8 +127,156 @@ class WinTAurProject:
 
     def __init__(self,
                  project_path: str | os.PathLike,
+                 new: bool = False,
                  ) -> None:
         self.project_path = project_path
-        self.case_names = [case.replace('.aurlite', '') for case in os.listdir(self.project_path)
-                           if case.endswith('.aurlite')]
-        self.cases = [WinTAurCase(self.project_path, case) for case in self.case_names]
+
+        if new:
+            self.case_names = []
+            self.cases = []
+            if not os.path.exists(self.project_path):
+                os.mkdir(self.project_path)
+
+        else:
+            self.case_names = [case.replace('.aurlite', '') for case in os.listdir(self.project_path)
+                               if case.endswith('.aurlite')]
+            self.cases = [WinTAurCase(self.project_path, case) for case in self.case_names]
+
+    def new_case(self,
+                 case_name: str,
+                 temp: float = 15.,
+                 pres: float = 101325.,
+                 dens: float = 1.225,
+                 humi: float = 80.,
+                 grnd: str = 'grass',
+                 run: bool = False,
+                 base_htc: str = None,
+                 time: tuple[float, float] = None,
+                 simulation_dt: float = .01,
+                 noise_dt: float = .5,
+                 hub_height: float = None,
+                 ws: float = None,
+                 shear: list[int, float] = (3, 0.2),
+                 wdir: list[float, float, float] = (0., 0., 0.),
+                 ti: float = None,
+                 z0: float = 1.0,
+                 bldata: str = None,
+                 observers: list[list[str, float, float, float]] = None,
+                 fs: int = 44100,
+                 overlap: int = 3
+                 ) -> None:
+        """
+
+        Parameters
+        ----------
+        case_name: str | os.PathLike
+            Name of the case file as a path relative to the project folder. Without the .aurlite file extension.
+        temp: float, optional (default = 15.)
+            Atmospheric temperature used for atmospheric attenuation.
+            Default value  is ISA temperature at 0m [1]_ .
+        pres: float, optional (default = 101325.)
+            Atmospheric pressure used for atmospheric attenuation and HAWC2.
+            Default value  is ISA pressure at 0m [1]_ .
+        dens: float, optional (default = 1.225)
+            Atmospheric density used for atmospheric attenuation and HAWC2.
+            Default value is ISA density at 0m [1]_ .
+        humi: float, optional (default = 80.)
+            Atmospheric relative humidity used for atmospheric attenuation
+            Default value is based on KNMI climate information [2]_ .
+        grnd: str, optional (default = 'grass')
+            Ground type used for the ground effect calculation.
+        run: bool, optional (default = False)
+            Indication to run the HAWC2 simulation.
+        base_htc: str, optional (default = None)
+            Name of the base htc input file, which defines the turbine structure, aerodynamics, and control.
+            Required parameter when run = True.
+        time: list[float, float], optional (default = None)
+            Start and end time for the HAWC2 noise calculations.
+            Required parameter when run = True.
+        simulation_dt: float, optional (default = 0.01)
+            Time step for the HAWC2 turbine aeroelastic simulation.
+            Optional parameter when run = True.
+        noise_dt: float, optional (default = 0.5)
+            Time step for the HAWC2 turbine noise calculations.
+            Optional parameter when run = True.
+        hub_height: float, optional (default = None)
+            Hub height of the wind turbine.
+            Required parameter when run = True.
+        ws: float, optional (default = None)
+            Mean wind speed for the HAWC2 simulation.
+            Required parameter when run = True.
+        shear: list[int, float], optional (default = (3, 0.2))
+            Wind shear parameters (see HAWC2 manual (wind -> shear_format) for more information [3]_).
+            Optional parameter when run = True.
+        wdir: list[float, float, float], optional (default = (0., 0., 0.)
+            Wind direction input (see HAWC2 manual (wind -> windfield_rotations) for more information [3]_).
+            Optional parameter when run = True.
+        ti: float, optional (default = None)
+            Turbulence intensity in percent for the HAWC2 simulation.
+            Required parameter when run = True.
+        z0: float, optional (default = None)
+            Blade surface roughness z0 (see HAWC2 manual (aero_noise -> surface_roughness) for more information [3]_).
+            Required parameter when run = True.
+        bldata: str, optional (default = None)
+            Filename of the boundary layer data file, relative to the project path.
+            Required parameter when run = True.
+        observers: list[list[str, float, float, float]], optional (default = None)
+            List of observation points in the HAWC2 global coordinate system.
+            Each point is a list containing: [name string, x, y, z].
+            Required parameter when run = True.
+        fs: int, optional (default = 44100)
+            Sampling frequency of the output wav files.
+        overlap: int, optional (default = 3)
+            Amount of overlap in the inverse short-time Fourier transform.
+
+        References
+        ----------
+        .. [1] International Organisation for Standardisation (ISO), ‘Standard Atmosphere’, Geneva, Switzerland,
+            International Standard ISO 2533:1975, May 1975.
+        .. [2] Koninklijk Nederlands Meteorologisch Instituut (KNMI), ‘KNMI - Klimaatviewer’. Accessed: Nov. 13, 2024.
+            [Online]. Available: https://www.knmi.nl/klimaat-viewer/kaarten/
+        .. [3] T. J. Larsen and A. M. Hansen, ‘How 2 HAWC2, the user’s manual’, DTU, Department of Wind Energy,
+            Roskilde, Denmark, Technical Report Risø-R-1597(ver. 13.0)(EN), May 2023. Accessed: Jan. 31, 2023.
+            [Online]. Available: http://tools.windenergy.dtu.dk/HAWC2/manual/
+
+        """
+        new_case = WinTAurCase(self.project_path, case_name, new=True)
+
+        new_case['conditions'] = {}
+        new_case['conditions']['temp'] = temp
+        new_case['conditions']['pres'] = pres
+        new_case['conditions']['dens'] = dens
+        new_case['conditions']['humi'] = humi
+        new_case['conditions']['grnd'] = grnd
+
+        if run:
+            new_case['hawc2_noise'] = {}
+            new_case['hawc2_noise']['run'] = run
+            new_case['hawc2_noise']['base_htc'] = base_htc
+            new_case['hawc2_noise']['time'] = time
+            new_case['hawc2_noise']['simulation_dt'] = simulation_dt
+            new_case['hawc2_noise']['noise_dt'] = noise_dt
+            new_case['hawc2_noise']['hub_height'] = hub_height
+            new_case['hawc2_noise']['ws'] = ws
+            new_case['hawc2_noise']['shear'] = shear
+            new_case['hawc2_noise']['wdir'] = wdir
+            new_case['hawc2_noise']['ti'] = ti
+            new_case['hawc2_noise']['z0'] = z0
+            new_case['hawc2_noise']['bldata'] = bldata
+
+        if observers is not None:
+            new_case['observers'] = {}
+            for observer in observers:
+                new_case['observers'][observer[0]] = {}
+                new_case['observers'][observer[0]]['name'] = observer[0]
+                new_case['observers'][observer[0]]['pos'] = observer[1:4]
+
+        new_case['reconstruction'] = {}
+        new_case['reconstruction']['fs'] = fs
+        new_case['reconstruction']['overlap'] = overlap
+
+        new_case.validate_case()
+
+        new_case.validate_case()
+        self.case_names.append(case_name)
+        self.cases.append(new_case)
