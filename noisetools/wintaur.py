@@ -131,6 +131,11 @@ class WinTAurProject:
                  ) -> None:
         self.project_path = project_path
 
+        required_dirs = ['htc', 'log', 'res', 'turb', ]
+        for required_dir in required_dirs:
+            if not os.path.isdir(os.path.join(self.project_path, required_dir)):
+                os.mkdir(os.path.join(self.project_path, required_dir))
+
         if new:
             self.case_names = []
             self.cases = []
@@ -151,17 +156,17 @@ class WinTAurProject:
                  grnd: str = 'grass',
                  run: bool = False,
                  base_htc: str = None,
-                 time: tuple[float, float] = None,
+                 time: tuple[float] = None,
                  simulation_dt: float = .01,
                  noise_dt: float = .5,
                  hub_height: float = None,
                  ws: float = None,
-                 shear: list[int, float] = (3, 0.2),
-                 wdir: list[float, float, float] = (0., 0., 0.),
+                 shear: list[int | float] = (3, 0.2),
+                 wdir: list[float] = (0., 0., 0.),
                  ti: float = None,
                  z0: float = 1.0,
                  bldata: str = None,
-                 observers: list[list[str, float, float, float]] = None,
+                 observers: list[list[str | float]] = None,
                  fs: int = 44100,
                  overlap: int = 3
                  ) -> None:
@@ -197,7 +202,7 @@ class WinTAurProject:
         base_htc: str, optional (default = None)
             Name of the base htc input file, which defines the turbine structure, aerodynamics, and control.
             Required parameter when run = True.
-        time: list[float, float], optional (default = None)
+        time: list[float], optional (default = None)
             Start and end time for the HAWC2 noise calculations.
             Required parameter when run = True.
         simulation_dt: float, optional (default = 0.01)
@@ -212,10 +217,10 @@ class WinTAurProject:
         ws: float, optional (default = None)
             Mean wind speed for the HAWC2 simulation.
             Required parameter when run = True.
-        shear: list[int, float], optional (default = (3, 0.2))
+        shear: list[int | float], optional (default = (3, 0.2))
             Wind shear parameters (see HAWC2 manual (wind -> shear_format) for more information [3]_).
             Optional parameter when run = True.
-        wdir: list[float, float, float], optional (default = (0., 0., 0.)
+        wdir: list[float], optional (default = (0., 0., 0.)
             Wind direction input (see HAWC2 manual (wind -> windfield_rotations) for more information [3]_).
             Optional parameter when run = True.
         ti: float, optional (default = None)
@@ -230,7 +235,7 @@ class WinTAurProject:
 
         Observer parameters
         ---
-        observers: list[list[str, float, float, float]], optional (default = None)
+        observers: list[list[str | float]], optional (default = None)
             List of observation points in the HAWC2 global coordinate system.
             Each point is a list containing: [name string, x, y, z].
             Required parameter when run = True.
