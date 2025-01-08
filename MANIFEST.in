@@ -1,2 +1,2 @@
 recursive-include noisetools\pysqat\SQAT-1.1\ *
-include noisetools\wintaur_lite_configspec.aurlite
+include noisetools\configspec.aurlite
