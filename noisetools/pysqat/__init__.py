@@ -115,8 +115,37 @@ class PySQAT:
 
     @staticmethod
     def extract_instantaneous_loudness(loudness_res: dict,
-                                       ) -> pd.DataFrame:
-        pass
+                                       ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Extract the instantaneous values of the loudness from the output dictionary of PySQAT.loudness_iso532_1.
+
+        Parameters
+        ----------
+        loudness_res: dict
+            Dictionary that is returned by PySQAT.loudness_iso532_1()
+
+        Returns
+        -------
+        Two Pandas DataFrames:
+            - DataFrame with time (s) as index and columns containing:
+                'N': Instantaneous Loudness (sone)
+                'Ln': Instantaneous Loudness Level (phon)
+                'OSPL': Instantaneous overall SPL from 1/3 octave band levels (dB(SPL))
+            - DataFrame with time (s) as index, and barks as columns,
+               containing the instantaneous Specific Loundess levels (sone/bark).
+        """
+        df_is_loudness = pd.DataFrame(loudness_res['InstantaneousSpecificLoudness'],
+                                      index=np.array(loudness_res['time']).flatten(),
+                                      columns=loudness_res['barkAxis'][0])
+
+        df_instantaneous = pd.DataFrame(index=np.array(loudness_res['time']).flatten(),
+                                        columns=['N', 'Ln', 'OSPL'])
+
+        df_instantaneous.loc[:, 'N'] = np.array(loudness_res['InstantaneousLoudness']).flatten()
+        df_instantaneous.loc[:, 'Ln'] = np.array(loudness_res['InstantaneousLoudnessLevel']).flatten()
+        df_instantaneous.loc[:, 'OSPL'] = np.array(loudness_res['InstantaneousSPL']).flatten()[::4]
+
+        return df_instantaneous, df_is_loudness
 
     @staticmethod
     def _check_pa_parameters(wavfilename: str,
