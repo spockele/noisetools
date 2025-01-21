@@ -72,6 +72,7 @@ class PySQAT:
         Stop the internal MATLAB engine. Calling this function renders this instance of PySQAT useless.
         """
         self.eng.quit()
+        del self
 
     @staticmethod
     def extract_instantaneous_sqms(pa_res: dict,
@@ -113,17 +114,22 @@ class PySQAT:
         return df
 
     @staticmethod
-    def _check_pa_paramters(wavfilename: str | os.PathLike,
-                            dbfs: int | float,
-                            time_skip: int | float,
-                            loudness_field: int | float
-                            ) -> None:
+    def extract_instantaneous_loudness(loudness_res: dict,
+                                       ) -> pd.DataFrame:
+        pass
+
+    @staticmethod
+    def _check_pa_parameters(wavfilename: str,
+                             dbfs: int | float,
+                             time_skip: int | float,
+                             loudness_field: int | float
+                             ) -> None:
         """
         Check the input parameters of the psychoacoustic_annoyance functions in this class
 
         Parameters
         ----------
-        wavfilename : str | os.PathLike
+        wavfilename : str
             Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
@@ -137,7 +143,8 @@ class PySQAT:
 
         loudness_field : number, optional
             Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
-            more info. NOTE: value should be convertible to an integer.
+            more info.
+            NOTE: value should be convertible to an integer.
 
         """
         if not isinstance(dbfs, int) and not dbfs.is_integer():
@@ -150,8 +157,12 @@ class PySQAT:
         if not os.path.exists(wavfilename):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), wavfilename)
 
-    def psychoacoustic_annoyance_zwicker1999(self, wavfilename: str | os.PathLike, dbfs: int | float = 94.,
-                                             time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
+    def psychoacoustic_annoyance_zwicker1999(self,
+                                             wavfilename: str,
+                                             dbfs: int | float = 94.,
+                                             time_skip: int | float = 0.,
+                                             loudness_field: int | float = 0.
+                                             ) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_Zwicker1999_from_wavfile.
 
@@ -160,7 +171,7 @@ class PySQAT:
 
         Parameters
         ----------
-        wavfilename : str | os.PathLike
+        wavfilename : str
             Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
@@ -174,7 +185,8 @@ class PySQAT:
 
         loudness_field : number, optional
             Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
-            more info. NOTE: value should be convertible to an integer.
+            more info.
+            NOTE: value should be convertible to an integer.
 
         Returns
         -------
@@ -209,13 +221,17 @@ class PySQAT:
             This would break MATLAB, but is checked beforehand to give a clear error message.
 
         """
-        self._check_pa_paramters(wavfilename, dbfs, time_skip, loudness_field)
+        self._check_pa_parameters(wavfilename, dbfs, time_skip, loudness_field)
 
         dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
         return self.eng.PsychoacousticAnnoyance_Zwicker1999_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
 
-    def psychoacoustic_annoyance_di2016(self, wavfilename: str | os.PathLike, dbfs: int | float = 94.,
-                                        time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
+    def psychoacoustic_annoyance_di2016(self,
+                                        wavfilename: str,
+                                        dbfs: int | float = 94.,
+                                        time_skip: int | float = 0.,
+                                        loudness_field: int | float = 0.
+                                        ) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_Di2016_from_wavfile.
 
@@ -224,7 +240,7 @@ class PySQAT:
 
         Parameters
         ----------
-        wavfilename : str | os.PathLike
+        wavfilename : str
             Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
@@ -238,7 +254,8 @@ class PySQAT:
 
         loudness_field : number, optional
             Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
-            more info. NOTE: value should be convertible to an integer.
+            more info.
+            NOTE: value should be convertible to an integer.
 
         Returns
         -------
@@ -275,13 +292,17 @@ class PySQAT:
             This would break MATLAB, but is checked beforehand to give a clear error message.
 
         """
-        self._check_pa_paramters(wavfilename, dbfs, time_skip, loudness_field)
+        self._check_pa_parameters(wavfilename, dbfs, time_skip, loudness_field)
 
         dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
         return self.eng.PsychoacousticAnnoyance_Di2016_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
 
-    def psychoacoustic_annoyance_more2010(self, wavfilename: str | os.PathLike, dbfs: int | float = 94.,
-                                          time_skip: int | float = 0., loudness_field: int | float = 0.) -> dict:
+    def psychoacoustic_annoyance_more2010(self,
+                                          wavfilename: str,
+                                          dbfs: int | float = 94.,
+                                          time_skip: int | float = 0.,
+                                          loudness_field: int | float = 0.
+                                          ) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_More2010_from_wavfile.
 
@@ -290,7 +311,7 @@ class PySQAT:
 
         Parameters
         ----------
-        wavfilename : str | os.PathLike
+        wavfilename : str
             Specifies the file name of a wav file to be processed.
 
         dbfs : number, optional
@@ -304,7 +325,8 @@ class PySQAT:
 
         loudness_field : number, optional
             Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
-            more info. NOTE: value should be convertible to an integer.
+            more info.
+            NOTE: value should be convertible to an integer.
 
         Returns
         -------
@@ -341,7 +363,83 @@ class PySQAT:
             This would break MATLAB, but is checked beforehand to give a clear error message.
 
         """
-        self._check_pa_paramters(wavfilename, dbfs, time_skip, loudness_field)
+        self._check_pa_parameters(wavfilename, dbfs, time_skip, loudness_field)
 
         dbfs, time_skip, loudness_field = float(dbfs), float(time_skip), float(loudness_field)
         return self.eng.PsychoacousticAnnoyance_More2010_from_wavfile(wavfilename, dbfs, time_skip, loudness_field, )
+
+    def loudness_iso532_1(self,
+                          wavfilename: str,
+                          dbfs: int | float = 94.,
+                          field: int | float = 0.,
+                          method: int | float = 2.,
+                          time_skip: int | float = 0.
+                          ) -> dict:
+        """
+        Wrapper for the SQAT function Loudness_ISO532_1_from_wavfile.
+
+        Only supports the use of .wav files, since the use of an array has unpredictable behaviour in the MATLAB engine.
+        The MATLAB parameters 'show' are always set to false, since MATLAB plotting breaks python.
+
+        Parameters
+        ----------
+        wavfilename: str
+            Specifies the file name of a wav file to be processed.
+
+        dbfs: number, optional
+            Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
+            SPL, or dBFS=94. If the specified dBFS is different from 94 dB SPL, then a gain factor will be applied.
+            NOTE: value should be convertible to an integer.
+
+        field: number, optional
+            Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
+            more info.
+            NOTE: value should be convertible to an integer.
+
+        method: number, optional
+            0 = stationary (from input 1/3 octave unweighted SPL)
+            1 = stationary (from audio file)
+            2 = time varying (from audio file)
+            NOTE: value should be convertible to an integer.
+
+        time_skip: number, optional
+            Skip start of the signal in <time_skip> seconds for statistics calculations.
+            NOTE: value should be convertible to an integer.
+
+        Returns
+        -------
+        Equivalent to the struct returned by the MATLAB equivalent function. Contains the following key-value pairs
+        with the Loudness results:
+            - barkAxis - vector of Bark band numbers used for specific loudness computation
+            - time - time vector of the final loudness calculation, in seconds
+            - time_insig - time vector of insig, in seconds
+            - InstantaneousLoudness - instantaneous loudness (sone) vs time
+            - InstantaneousSpecificLoudness - specific loudness (sone/Bark) vs time
+            - InstantaneousLoudnessLevel - instantaneous loudness level (phon) vs time
+            - SpecificLoudness - time-averaged specific loudness (sone/Bark)
+            - InstantaneousSPL - overall SPL (1/3 octave bands) for each time step, in dBSPL
+            - Several statistics based on the InstantaneousLoudness
+                - Nmean : mean value of InstantaneousLoudness (sone)
+                - Nstd : standard deviation of InstantaneousLoudness (sone)
+                - Nmax : maximum of InstantaneousLoudness (sone)
+                - Nmin : minimum of InstantaneousLoudness (sone)
+                - Nx : percentile loudness exceeded during x percent of the signal (sone)
+                - N_ratio : ratio between N5/N95 ( 1.1 (stationary)> N_ratio > 1.1 (time varying) )
+             HINT:  loudness calculation takes some time to have a steady-response
+                    therefore, it is a good practice to consider a time_skip to compute the statistics
+                    due to transient effects in the beginning of the loudness calculations
+        """
+        if not isinstance(dbfs, int) and not dbfs.is_integer():
+            raise ValueError('Value of parameter "dbfs" should be an integer.')
+        if not isinstance(field, int) and not field.is_integer():
+            raise ValueError('Value of parameter "field" should be an integer.')
+        if not isinstance(method, int) and not method.is_integer():
+            raise ValueError('Value of parameter "method" should be an integer.')
+        if not isinstance(time_skip, int) and not time_skip.is_integer():
+            raise ValueError('Value of parameter "time_skip" should be an integer.')
+
+        if not os.path.exists(wavfilename):
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), wavfilename)
+
+        dbfs, field, method, time_skip = float(dbfs), float(field), float(method), float(time_skip)
+        return self.eng.Loudness_ISO532_1_from_wavfile(wavfilename, dbfs, field, method, time_skip, )
