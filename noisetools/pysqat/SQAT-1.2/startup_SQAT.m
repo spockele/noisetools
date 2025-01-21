@@ -75,86 +75,49 @@ EPNL_example     = [bp 'examples'               filesep 'EPNL_FAR_Part36' filese
 bAdd = ~exist('Loudness_ISO532_1.m','file');
 if bAdd
     addpath(L_main);
-    addpath(L_validation);
-    addpath(L_example);
 end
 
 bAdd = ~exist('Roughness_Daniel1997.m','file');
 if bAdd
     addpath(R_main);
-    addpath(R_validation);
-    addpath(R_example);
 end
 
 bAdd = ~exist('FluctuationStrength_Osses2016.m','file');
 if bAdd
     addpath(FS_main);
-    addpath(FS_validation);
-    addpath(FS_example);
 end
 
 bAdd = ~exist('Sharpness_DIN45692.m','file');
 if bAdd
     addpath(S_main);
-    addpath(S_validation);
-    addpath(S_example);
 end
 
 bAdd = ~exist('Tonality_Aures1985.m','file');
 if bAdd
     addpath(T_main);
-    addpath(T_validation);
-    addpath(T_example);
 end
 
 bAdd = ~exist('PsychoacousticAnnoyance_Zwicker1999.m','file');
 if bAdd
     addpath(PA_Zwicker_main);
-    addpath(PA_Zwicker_example);
 end
 
 bAdd = ~exist('PsychoacousticAnnoyance_More2010.m','file');
 if bAdd
     addpath(PA_More_main);
-    addpath(PA_More_example);
 end
 
 bAdd = ~exist('PsychoacousticAnnoyance_Di2016.m','file');
 if bAdd
     addpath(PA_Di_main);
-    addpath(PA_Di_example);
-end
-
-bAdd = ~exist('ex_sound_level_meter.m','file');
-if bAdd
-    addpath(SLM_example);
 end
 
 bAdd = ~exist('EPNL_FAR_Part36.m','file');
 if bAdd
     addpath(EPNL_main);
-    addpath(EPNL_validation);
-    addpath(EPNL_example);
 end
 
 bAdd = ~exist('get_PNL.m','file');
 if bAdd
     addpath(EPNL_helper);
-end
-
-%%% Adding the publications' directory (alphabetical order):
-bAdd = ~exist('pub_Greco2023_Internoise.m','file');
-if bAdd
-    dir2add = [bp 'publications' filesep 'pub_Greco2023_Internoise' filesep];
-    if exist(dir2add,'dir')
-        addpath(dir2add)
-    end
-end
-
-bAdd = ~exist('pub_Osses2023c_Forum_Acusticum_SQAT.m','file');
-if bAdd
-    dir2add = [bp 'publications' filesep 'pub_Osses2023c_Forum_Acusticum_SQAT' filesep];
-    if exist(dir2add,'dir')
-        addpath(dir2add)
-    end
 end
