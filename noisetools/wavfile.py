@@ -7,18 +7,16 @@ import scipy.io as spio
 import numpy as np
 import os
 
+
 class WavFile:
     """
 
     """
     def __init__(self,
                  filename: str,
-                 t0: int | float = 0.,
                  norm: int | float = 1.,
-                 fs: int = None,
                  wav: np.ndarray = None,
-                 wav_left: np.ndarray = None,
-                 wav_right: np.ndarray = None,
+                 fs: int = None,
                  ) -> None:
         self.filename = filename if filename.endswith('.wav') else filename + '.wav'
 
@@ -26,46 +24,85 @@ class WavFile:
         if os.path.isfile(self.filename):
             self.fs, wav = spio.wavfile.read(filename)
             self.fs: int
-            wav: np.ndarray = wav.astype(np.float32) / norm
+            wav: np.ndarray = wav / norm
         # Otherwise, a wav array is expected, so check for the existence.
+        elif wav is None:
+            raise FileNotFoundError(f'[Errno 2] No such file or directory: {self.filename}')
+        # At this point, a wav array exists, so check for the presence of a sampling frequency.
         elif fs is None:
             raise SyntaxError(f'Initialising from an array requires defining the sampling frequency fs.')
-        elif wav is None and wav_left is None and wav_right is None:
-            raise FileNotFoundError(f'[Errno 2] No such file or directory: {self.filename}')
 
-        if wav is None:
-            if wav_left is None and wav_right is not None:
-                raise SyntaxError(f'Right signal defined, without defining a Left signal. For mono signals, use wav.')
-            elif wav_right is None and wav_left is not None:
-                raise SyntaxError(f'Left signal defined, without defining a Right signal. For mono signals, use wav.')
-            elif wav_left.size != wav_right.size:
-                raise ValueError(f'Left and Right signal should have the same length.')
+        # Convert to 32-bit floats, for saving to wavfile purposes.
+        if wav.dtype != np.float32:
+            wav = wav.astype(np.float32)
 
-            self.wav_left = wav_left.flatten()
-            self.wav_right = wav_right.flatten()
+        # It is now certain the variable wav is filled.
+        # Check that wav has maximum two dimensions, since there is only a sample and channel dimension.
+        if wav.ndim > 2:
+            raise ValueError(f'wav input array has too many dimensions. wav.ndim = {wav.ndim} > 2.')
 
+        # In case of a stereo array.
+        elif wav.ndim == 2:
+            # Check it has a correct shape for use.
+            if wav.shape[1] > 2:
+                raise ValueError(f'wav input array has too many channels. wav.shape[1] = {wav.shape[1]} > 2')
+            # Split up the channels.
+            self.wav_left: np.ndarray = wav[:, 0].copy()
+            self.wav_right: np.ndarray = wav[:, 1].copy()
+
+        # In case of a mono array, fill both channels with this array.
         else:
-            if wav.ndim > 2:
-                raise ValueError(f'wav input array has too many dimensions. wav.ndim = {wav.ndim} > 2.')
+            self.wav_left: np.ndarray = wav.copy()
+            self.wav_right: np.ndarray = wav.copy()
 
-            elif wav.ndim == 2:
-                if wav.shape[1] > 2:
-                    raise ValueError(f'wav input array has too many channels. wav.shape[1] = {wav.shape[1]} > 2')
-
-                self.wav_left: np.ndarray = wav[:, 0]
-                self.wav_right: np.ndarray = wav[:, 1]
-
-            else:
-                self.wav_left: np.ndarray = wav.copy()
-                self.wav_right: np.ndarray = wav.copy()
-
+        # Determine the signal length, duration and create a time vector.
         self.length = self.wav_left.size
         self.duration = self.length / self.fs
         self.duration_string = self.seconds_to_mmssms(self.duration)
-        self.t = t0 + np.linspace(0, self.duration, self.length)
+        self.t = np.linspace(0, self.duration, self.length)
 
     def __repr__(self) -> str:
         return f'<WAV file: {self.filename} ({self.duration_string})>'
+
+    @staticmethod
+    def _two_channel_to_wav(left_array: np.ndarray,
+                            right_array: np.ndarray,
+                            ) -> np.ndarray:
+        """
+
+        Parameters
+        ----------
+        left_array
+        right_array
+
+        Returns
+        -------
+
+        """
+        return np.concatenate([left_array.reshape(-1, 1), right_array.reshape(-1, 1)], axis=1)
+
+    @classmethod
+    def from_two_channel(cls,
+                         filename: str,
+                         left_array: np.ndarray,
+                         right_array: np.ndarray,
+                         fs: int,
+                         ):
+        """
+
+        Parameters
+        ----------
+        filename
+        left_array
+        right_array
+        fs
+
+        Returns
+        -------
+
+        """
+        wav = cls._two_channel_to_wav(left_array, right_array)
+        return cls(filename, wav=wav, fs=fs)
 
     @staticmethod
     def seconds_to_mmssms(t: int | float) -> str:
