@@ -10,7 +10,42 @@ import os
 
 class WavFile:
     """
+    Class for handling WAV files.
 
+    Parameters
+    ----------
+    filename: str
+        Filename for an existing WAV file or for a new WAV file.
+    norm: int | float, optional (default=1.)
+        Normalisation factor that was used to write the original WAV file. The values in the WAV file are divided by
+        this factor directly after reading. This factor is not used for writing. The signals are converted to 32-bit
+        floats and new WAV files are written as such.
+    wav: numpy.ndarray, optional
+        Optional entry for the creation of a new WAV file. For mono signals, this should be a 1D array.
+        For stereo signals, this should be a 2D array with shape (length, 2).
+        NOTE: when an array is given, a sampling frequency fs should be included.
+    fs: int, optional
+        Sampling frequency of input array 'wav'.
+        NOTE: this parameter should be included when wav is defined.
+
+    Attributes
+    ----------
+    filename: str
+        Name of the associated WAV file.
+    fs: int
+        Sampling frequency of the stored singal(s).
+    wav_left: numpy.ndarray
+        Left audio signal (in case of a mono signal, this equals wav_right).
+    wav_right: numpy.ndarray
+        Right audio signal (in case of a mono signal, this equals wav_left).
+    length: int
+        Number of samples in the signal(s).
+    duration: float
+        Duration of the signal(s) in seconds.
+    duration_string: str
+        String representation of the signal(s) duration in mm:ss:ms_.
+    t: numpy.ndarray
+        Array containing the time vector of the WAV file in seconds.
     """
     def __init__(self,
                  filename: str,
@@ -57,27 +92,31 @@ class WavFile:
 
         # Determine the signal length, duration and create a time vector.
         self.length = self.wav_left.size
-        self.duration = self.length / self.fs
+        self.duration = float(self.length / self.fs)
         self.duration_string = self.seconds_to_mmssms(self.duration)
         self.t = np.linspace(0, self.duration, self.length)
 
     def __repr__(self) -> str:
-        return f'<WAV file: {self.filename} ({self.duration_string})>'
+        mono_str = 'mono' if self.check_mono() else 'stereo'
+        return f"<'{self.filename}' ({self.duration_string}) ({mono_str})>"
 
     @staticmethod
     def _two_channel_to_wav(left_array: np.ndarray,
                             right_array: np.ndarray,
                             ) -> np.ndarray:
         """
+        Convert a left and right signal to the correct array format for a stereo WAV file.
 
         Parameters
         ----------
-        left_array
-        right_array
+        left_array: numpy.ndarray
+            1D Numpy array containing the left signal.
+        right_array: numpy.ndarray
+            1D Numpy array containing the right signal.
 
         Returns
         -------
-
+        An 2D array with shape (length, 2)
         """
         return np.concatenate([left_array.reshape(-1, 1), right_array.reshape(-1, 1)], axis=1)
 
@@ -89,17 +128,22 @@ class WavFile:
                          fs: int,
                          ):
         """
+        Create an instance of WavFile from a left and right signal array
 
         Parameters
         ----------
-        filename
-        left_array
-        right_array
-        fs
+        filename: str
+            Filename for the new WAV file.
+        left_array: numpy.ndarray
+            1D Numpy array containing the left signal.
+        right_array: numpy.ndarray
+            1D Numpy array containing the right signal.
+        fs: int, optional
+            Sampling frequency of input arrays.
 
         Returns
         -------
-
+        An instance of WavFile with the given signal information.
         """
         wav = cls._two_channel_to_wav(left_array, right_array)
         return cls(filename, wav=wav, fs=fs)
@@ -144,8 +188,7 @@ class WavFile:
 
         return 60 * mm + ss + ms / 1e3
 
-    def check_mono(self
-                   ) -> bool:
+    def check_mono(self) -> bool:
         """
         Determine whether the signal in this WAV file is mono.
         """
@@ -180,11 +223,20 @@ class WavFile:
         self.duration_string = self.seconds_to_mmssms(self.duration)
         self.t = np.linspace(self.t[0], self.duration, self.length)
 
-    def overwrite(self,
-                  ) -> None:
+    def write(self,
+              overwrite: bool = True,
+              ) -> None:
         """
-        Overwrite the original WAV file with the information currently stored in this instance.
+        Write the the information in this instance to a WAV file.
+
+        Parameters
+        ----------
+        overwrite: bool, optional (default=True)
+            Explicit indication whether to overwrite the WAV file of this instance.
         """
+        if os.path.isfile(self.filename) and not overwrite:
+            return
+
         if self.check_mono():
             spio.wavfile.write(self.filename, self.fs, self.wav_left)
         else:
@@ -196,13 +248,12 @@ class WavFile:
     def export(self,
                t0: float | str,
                t1: float | str,
-               filename: str = None,
+               filename: str,
                fs: int = None,
-               overwrite: bool = False,
-               ) -> None:
+               write: bool = False,
+               ):
         """
-        Export the signal where t0 <= WavFile.t < t1, to a new WAV file. In case overwriting the original file is
-        desired, this should be explicitly allowed.
+        Export the signal section where t0 <= WavFile.t < t1, to a new WavFile instance.
 
         Parameters
         ----------
@@ -210,26 +261,28 @@ class WavFile:
             Start time of the export in seconds, or in a mm:ss:_ms format.
         t1: float | str
             End time of the export in seconds, or in a mm:ss:_ms format.
-        filename: str, optional
+            NOTE: In case t1==self.duration, the selection becomes t0 <= WavFile.t <= t1
+        filename: str
             File name to export partial signal to. Defaults to filename_export.wav.
         fs: int, optional
             Sampling frequency for optional resampling before export.
-        overwrite
+        write: bool
+            Write the information of the new instance to a WAV file immediately.
 
         Returns
         -------
-
+        A new instance of WavFile with the signal information between t0 and t1.
         """
         if isinstance(t0, str):
             t0 = self.mmssms_to_seconds(t0)
         if isinstance(t1, str):
             t1 = self.mmssms_to_seconds(t1)
 
-        select = (t0 <= self.t) & (self.t < t1)
+        select = (t0 <= self.t) & (self.t < t1) if t1 != self.duration else (t0 <= self.t) & (self.t <= t1)
 
         if filename is None:
             filename = self.filename.replace('.wav', '_export.wav')
-        elif filename == self.filename and not overwrite:
+        elif filename == self.filename and not write:
             raise FileExistsError(f"This action would overwrite the original WAV file, which is not allowed. "
                                   f"Use 'overwrite=True' if you really want to overwrite the original WAV file.")
 
@@ -237,9 +290,11 @@ class WavFile:
             self.resample(fs)
 
         if self.check_mono():
-            spio.wavfile.write(filename, self.fs, self.wav_left[select])
+            wavfile = WavFile(filename, wav=self.wav_left[select], fs=self.fs)
         else:
-            wav = np.concatenate([self.wav_left[select].reshape(-1, 1),
-                                  self.wav_right[select].reshape(-1, 1)],
-                                 axis=1)
-            spio.wavfile.write(filename, self.fs, wav)
+            wavfile = WavFile.from_two_channel(filename, self.wav_left[select], self.wav_right[select], self.fs)
+
+        if write:
+            wavfile.write()
+
+        return wavfile
