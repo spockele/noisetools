@@ -8,6 +8,9 @@ import numpy as np
 import os
 
 
+__all__ = ['WavFile', ]
+
+
 class WavFile:
     """
     Class for handling WAV files.
@@ -66,6 +69,8 @@ class WavFile:
         # At this point, a wav array exists, so check for the presence of a sampling frequency.
         elif fs is None:
             raise SyntaxError(f'Initialising from an array requires defining the sampling frequency fs.')
+        else:
+            self.fs = fs
 
         # Convert to 32-bit floats, for saving to wavfile purposes.
         if wav.dtype != np.float32:
