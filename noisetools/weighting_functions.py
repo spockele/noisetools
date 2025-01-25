@@ -19,7 +19,7 @@ import scipy.signal as spsig
 import numpy as np
 
 
-__all__ = ['a_weighting_simons', 'a_weighting', 'c_weighting', 'weighting_poles', 'weighting_filter', 'weigh_signal', ]
+__all__ = ['a_weighting', 'c_weighting', 'weigh_signal', ]
 
 
 def a_weighting_simons(f: np.ndarray,
