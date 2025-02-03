@@ -105,6 +105,21 @@ class WavFile:
         mono_str = 'mono' if self.check_mono() else 'stereo'
         return f"<'{self.filename}' ({self.duration_string}) ({mono_str})>"
 
+    def __add__(self, other):
+        if not isinstance(other, self.__class__):
+            raise TypeError('WavFile only supports addition between WavFile instances.')
+
+        if self.fs != other.fs:
+            other.resample(self.fs)
+
+        if self.length != other.length:
+            raise ValueError('Two WavFile instances require the same length for addition.')
+
+        left_array = self.wav_left + other.wav_left
+        right_array = self.wav_right + other.wav_right
+
+        return self.from_two_channel(self.filename, left_array, right_array, self.fs)
+
     @staticmethod
     def _two_channel_to_wav(left_array: np.ndarray,
                             right_array: np.ndarray,
