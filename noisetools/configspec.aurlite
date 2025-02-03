@@ -27,5 +27,5 @@
         pos = float_list(min=3, max=3)
 
 [reconstruction]
-    fs = integer(min=0, default=44100)
+    fs = integer(min=0, default=48000)
     overlap = integer(min=2, default=3)
