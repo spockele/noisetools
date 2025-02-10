@@ -17,6 +17,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [//]: # (### Fixed)
 
+## [v0.0.3]
+
+### Added
+- ```wavfile``` module with ```WavFile``` class.\
+  - Functions to resample, write to file, export part of the audio signal.
+  - Stores information like the sampling frequency, number of samples, duration in seconds, and a time series corresponding to the samples.
+- ```loudness_iso532_1``` function added to ```PySQAT```.
+- Function to extract all loudness information from result dictionary added to ```PySQAT```.
+
+### Changed
+- Updated included ```SQAT``` version to v1.2.
+- Default sampling frequency of WinTAur Lite output changed to 48 kHz to match ```SQAT```.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+
+## [v0.0.2]
+### Added
+- Addition of WinTAur Lite code to noisetools.
+  - Main goal: allow for easy creation and modification of ```.aurlite``` files outside WinTAur.
+  - Includes Case and Project classes, without the ```.run()``` functions.
+
+
 ## [v0.0.1]
 
 ### Added
@@ -26,11 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Switching to a slightly different semantic versioning number to move away from the '-dev0' notation that is just hideous.
 
-### Deprecated
-
-### Removed
-
-### Fixed
 
 ## [v.0.1.0-dev0]
 Very first version. Very pre-release...
