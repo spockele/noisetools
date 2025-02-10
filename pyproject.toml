@@ -5,7 +5,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name='noisetools'
-version='0.0.2'
+version='0.0.3'
 description='A Python toolbox with all the specialty signal analysis tools for my PhD.'
 readme='README.md'
 license = {file = "LICENSE"}
@@ -44,7 +44,7 @@ exclude = ['nrel', ]
 
 [project.optional-dependencies]
 pysqat = [
-    'matlabengine==23.2.2',
+    'matlabengine',
 ]
 dev = [
     'pytest>=8.0.2',

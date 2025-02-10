@@ -10,8 +10,9 @@ A Python toolbox with all the specialty signal analysis tools for my PhD.
 ## Modules
 
 ### pySQAT
-Translation layer to run SQAT with this toolbox. Contains SQAT v1.2 inside to allow for running [[1](#greco2023)].
-Currently only works with MATLAB R2023b - Python==3.11 - matlabengine==23.2.
+Translation layer to run SQAT with this toolbox. Contains SQAT v1.2 inside to allow for running [[1](#greco2023)].\
+IMPORTANT: IT IS RECOMMENDED TO INSTALL [matlabengine](https://pypi.org/project/matlabengine/) MANUALLY TO HAVE A VERSION COMPATIBLE WITH YOUR VERSION OF MATLAB.
+ Compatible MATLAB versions are indicated on the PyPi version descriptions.
 
 ### WinTAur
 Functions to make working with WinTAur Lite easier. Currently compatible with latest version.
