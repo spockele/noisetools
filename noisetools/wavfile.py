@@ -5,6 +5,7 @@
 import scipy.signal as spsig
 import scipy.io as spio
 import numpy as np
+import warnings
 import os
 
 
@@ -227,6 +228,7 @@ class WavFile:
         """
         # Don't do anything if the sampling frequency is equal.
         if self.fs == fs:
+            warnings.warn('Requested resampling frequency is equal to current sampling frequency.', stacklevel=2)
             return
 
         # Set the up- and down-sampling for scipy signal.
