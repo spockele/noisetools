@@ -1,6 +1,19 @@
 """Functions to interact with wav files.
 """
 
+# Copyright 2024 Josephine Pockelé
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import scipy.signal as spsig
 import scipy.io as spio
@@ -10,6 +23,11 @@ import os
 
 
 __all__ = ['WavFile', ]
+pcm_table = {'s32': (-2147483648, +2147483647, np.int32),
+             's24': (-2147483648, +2147483392, np.int32),
+             's16': (-32768, +32767, np.int16),
+             'u8': (0, 255, np.uint8),
+             }
 
 
 class WavFile:
@@ -56,14 +74,14 @@ class WavFile:
                  norm: int | float = 1.,
                  wav: np.ndarray = None,
                  fs: int = None,
+                 pcm: str = None,
                  ) -> None:
         self.filename = filename if filename.endswith('.wav') else filename + '.wav'
 
         # Read from a file, if it exists.
-        if os.path.isfile(self.filename):
+        if os.path.isfile(self.filename) and wav is None:
             self.fs, wav = spio.wavfile.read(filename)
             self.fs: int
-            wav: np.ndarray = wav / norm
         # Otherwise, a wav array is expected, so check for the existence.
         elif wav is None:
             raise FileNotFoundError(f'[Errno 2] No such file or directory: {self.filename}')
@@ -75,7 +93,20 @@ class WavFile:
 
         # Convert to 32-bit floats, for saving to wavfile purposes.
         if wav.dtype != np.float32:
-            wav = wav.astype(np.float32)
+            if pcm is None:
+                raise ValueError(f'{filename} is not in PCM f32 format, provide the PCM format to WavFile.')
+            else:
+                pcm = pcm.lower()
+
+                if pcm not in pcm_table.keys():
+                    raise ValueError('Given WV file PCM format not supported by noisetools.')
+                elif pcm_table[pcm][2] != wav.dtype:
+                    raise ValueError(f'Provided PCM format ({pcm}) does not match the obtained dtype ({wav.dtype}).')
+
+                wav = wav.astype(np.float32)
+                wav = 2 * (wav - pcm_table[pcm][0]) / (pcm_table[pcm][1] - pcm_table[pcm][0]) - 1.
+
+        wav: np.ndarray = wav / norm
 
         # It is now certain the variable wav is filled.
         # Check that wav has maximum two dimensions, since there is only a sample and channel dimension.
@@ -108,7 +139,7 @@ class WavFile:
 
     def __add__(self, other):
         if not isinstance(other, self.__class__):
-            raise TypeError('WavFile only supports addition between WavFile instances.')
+            raise NotImplementedError('WavFile only supports addition between WavFile instances.')
 
         if self.fs != other.fs:
             other.resample(self.fs)
@@ -120,6 +151,17 @@ class WavFile:
         right_array = self.wav_right + other.wav_right
 
         return self.from_two_channel(self.filename, left_array, right_array, self.fs)
+
+    def __mul__(self, other):
+        if not (isinstance(other, int) or isinstance(other, float) or isinstance(other, np.number)):
+            raise NotImplementedError('WavFile only support multiplication by a constant value.')
+
+        left_array = self.wav_left * other
+        right_array = self.wav_right * other
+
+        return self.from_two_channel(self.filename, left_array, right_array, self.fs)
+
+    __rmul__ = __mul__
 
     @staticmethod
     def _two_channel_to_wav(left_array: np.ndarray,
@@ -247,6 +289,7 @@ class WavFile:
 
     def write(self,
               overwrite: bool = True,
+              filename: str = None,
               ) -> None:
         """
         Write the the information in this instance to a WAV file.
@@ -255,7 +298,12 @@ class WavFile:
         ----------
         overwrite: bool, optional (default=True)
             Explicit indication whether to overwrite the WAV file of this instance.
+        filename: str, optional
+            Optional filename, if writing to a different file is desired.
+            This will change the WavFile objects self.filename.
         """
+        self.filename = self.filename if filename is None else filename
+
         if os.path.isfile(self.filename) and not overwrite:
             return
 
@@ -270,7 +318,7 @@ class WavFile:
     def export(self,
                t0: float | str,
                t1: float | str,
-               filename: str,
+               filename: str = None,
                fs: int = None,
                write: bool = False,
                ):
@@ -284,12 +332,13 @@ class WavFile:
         t1: float | str
             End time of the export in seconds, or in a mm:ss:_ms format.
             NOTE: In case t1==self.duration, the selection becomes t0 <= WavFile.t <= t1
-        filename: str
+        filename: str, optional
             File name to export partial signal to. Defaults to filename_export.wav.
         fs: int, optional
             Sampling frequency for optional resampling before export.
-        write: bool
+        write: bool, optional
             Write the information of the new instance to a WAV file immediately.
+            NOTE: This will overwrite previous wav files with the same filename!
 
         Returns
         -------
@@ -304,9 +353,12 @@ class WavFile:
 
         if filename is None:
             filename = self.filename.replace('.wav', '_export.wav')
-        elif filename == self.filename and not write:
-            raise FileExistsError(f"This action would overwrite the original WAV file, which is not allowed. "
-                                  f"Use 'overwrite=True' if you really want to overwrite the original WAV file.")
+        elif filename == self.filename and write:
+            raise FileExistsError(f"Filename of the WavFile export equals the original filename ({self.filename}). "
+                                  f"Please choose a different filename or set write=False.")
+        elif filename == self.filename:
+            warnings.warn(f"Filename of the WavFile export equals the original filename ({self.filename}). It is "
+                          f"recommended to choose a different filename for exporting sections of the signal.")
 
         if fs is not None:
             self.resample(fs)
@@ -317,6 +369,6 @@ class WavFile:
             wavfile = WavFile.from_two_channel(filename, self.wav_left[select], self.wav_right[select], self.fs)
 
         if write:
-            wavfile.write()
+            wavfile.write(overwrite=True)
 
         return wavfile
