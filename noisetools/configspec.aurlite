@@ -8,6 +8,7 @@
 [hawc2_noise]
     run = boolean(default=False)
     base_htc = string()
+    rm_spl_files = boolean(default=True)
     time = float_list(min=2, max=2)
 
     simulation_dt = float(min=1e-12, default=0.01)
