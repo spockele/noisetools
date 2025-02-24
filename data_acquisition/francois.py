@@ -1,6 +1,5 @@
 from nidaqmx.constants import READ_ALL_AVAILABLE
 from noisetools.wavfile import WavFile
-import matplotlib.pyplot as plt
 import nidaqmx as ni
 import numpy as np
 import os
