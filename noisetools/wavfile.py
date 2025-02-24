@@ -93,7 +93,9 @@ class WavFile:
 
         # Convert to 32-bit floats, for saving to wavfile purposes.
         if wav.dtype != np.float32:
-            if pcm is None:
+            if np.issubdtype(wav.dtype, np.floating):
+                wav = wav.astype(np.float32)
+            elif pcm is None:
                 raise ValueError(f'{filename} is not in PCM f32 format, provide the PCM format to WavFile.')
             else:
                 pcm = pcm.lower()
@@ -179,7 +181,7 @@ class WavFile:
 
         Returns
         -------
-        An 2D array with shape (length, 2)
+        A 2D array with shape (length, 2)
         """
         return np.concatenate([left_array.reshape(-1, 1), right_array.reshape(-1, 1)], axis=1)
 
