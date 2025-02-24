@@ -164,3 +164,6 @@ DTU_NTK_DATASET.zip
 nrel/
 ntk/
 xfoil.exe
+
+# Ignore measurement folder in the data_acquisition module
+data_acquisition/measurements/
