@@ -160,6 +160,7 @@ cython_debug/
 .idea/
 
 # Some items to exclude
+DTU_NTK_DATASET.zip
 nrel/
 ntk/
 xfoil.exe
