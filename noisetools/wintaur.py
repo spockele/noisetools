@@ -131,6 +131,9 @@ class WinTAurProject:
                  ) -> None:
         self.project_path = project_path
 
+        if not os.path.isdir(self.project_path):
+            os.mkdir(self.project_path)
+
         required_dirs = ['htc', 'log', 'res', 'turb', ]
         for required_dir in required_dirs:
             if not os.path.isdir(os.path.join(self.project_path, required_dir)):
@@ -167,7 +170,7 @@ class WinTAurProject:
                  z0: float = 1.0,
                  bldata: str = None,
                  observers: list[list[str | float]] = None,
-                 fs: int = 44100,
+                 fs: int = 48000,
                  overlap: int = 3
                  ) -> None:
         """
