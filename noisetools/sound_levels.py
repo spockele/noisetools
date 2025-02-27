@@ -20,7 +20,7 @@ import numpy as np
 from .weighting_functions import weigh_signal
 
 
-__all__ = ['equivalent_pressure', 'ospl', ]
+__all__ = ['equivalent_pressure', 'ospl', 'ospl_t', ]
 
 
 def equivalent_pressure(signal: list | np.ndarray,
