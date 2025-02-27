@@ -346,6 +346,9 @@ class WavFile:
         -------
         A new instance of WavFile with the signal information between t0 and t1.
         """
+        if fs is not None:
+            self.resample(fs)
+
         if isinstance(t0, str):
             t0 = self.mmssms_to_seconds(t0)
         if isinstance(t1, str):
@@ -361,9 +364,6 @@ class WavFile:
         elif filename == self.filename:
             warnings.warn(f"Filename of the WavFile export equals the original filename ({self.filename}). It is "
                           f"recommended to choose a different filename for exporting sections of the signal.")
-
-        if fs is not None:
-            self.resample(fs)
 
         if self.check_mono():
             wavfile = WavFile(filename, wav=self.wav_left[select], fs=self.fs)
