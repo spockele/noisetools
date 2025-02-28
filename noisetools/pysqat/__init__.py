@@ -29,6 +29,7 @@ References
 # limitations under the License.
 
 import scipy.interpolate as spint
+from typing import Literal
 import pandas as pd
 import numpy as np
 import errno
@@ -55,6 +56,14 @@ class PySQAT:
     RuntimeError
         If the SQAT directory is not where it is expected to be.
     """
+    # Define the metrics and the names of their instantaneous SQM vector.
+    metrics = {'PA': 'PA',
+               'L': 'Loudness',
+               'S': 'Sharpness',
+               'R': 'Roughness',
+               'FS': 'FluctuationStrength',
+               'K': 'Tonality', }
+
     def __init__(self,
                  ) -> None:
         if not os.path.isdir(SQAT_PATH):
@@ -66,7 +75,7 @@ class PySQAT:
         self.eng.cd(SQAT_PATH)
         self.eng.startup_SQAT(nargout=0)
 
-    def stop_sqat(self
+    def stop_sqat(self,
                   ) -> None:
         """
         Stop the internal MATLAB engine. Calling this function renders this instance of PySQAT useless.
@@ -74,8 +83,8 @@ class PySQAT:
         self.eng.quit()
         del self
 
-    @staticmethod
-    def extract_instantaneous_sqms(pa_res: dict,
+    def extract_instantaneous_sqms(self,
+                                   pa_res: dict,
                                    ) -> pd.DataFrame:
         """
         Extract the instantaneous values of the SQMs from the dictionary with results from
@@ -91,17 +100,15 @@ class PySQAT:
         Pandas DataFrame with the time series of the instantaneous SQMs.
 
         """
-        # Define the metrics and the names of their instantaneous SQM vector.
-        metrics = {'L': 'Loudness', 'S': 'Sharpness', 'R': 'Roughness', 'FS': 'FluctuationStrength', 'K': 'Tonality', }
         # Define the column names for the pandas DataFrame
-        columns = ['PA'] + [metric for metric in metrics.keys() if metric in pa_res.keys()]
+        columns = ['PA'] + [metric for metric in self.metrics.keys() if metric in pa_res.keys()]
 
         # Create the DataFrame and fill the PA column.
         df = pd.DataFrame(index=np.array(pa_res['time'], dtype=float).flatten(), columns=columns)
         df.loc[:, 'PA'] = np.array(pa_res[f'InstantaneousPA'], dtype=float).flatten()
 
         # Loop over the metrics to be extracted.
-        for metric, name in metrics.items():
+        for metric, name in self.metrics.items():
             if metric in df.columns:
                 # Extract time and SQM vectors.
                 instantaneous_tme = np.array(pa_res[metric]['time'], dtype=float).flatten()
@@ -112,6 +119,31 @@ class PySQAT:
                 df.loc[:, metric] = f(df.index)
 
         return df
+
+    def extract_instantaneous_sqm(self,
+                                  sqm_res: dict,
+                                  metric: str,
+                                  ) -> pd.DataFrame:
+        """
+        General function to extract the instantaneous values of one sound quality metric result output.
+
+        Parameters
+        ----------
+        sqm_res: dict
+            Dictionary that is returned by the SQM calculation function of PySQAT
+        metric: str
+            Abbreviation of the sound quality metric. This has to match one of the metrics in PySQAT.metrics.
+            Required for the extraction from the result dictionary.
+
+        Returns
+        -------
+        Pandas DataFrame with the time series of the instantaneous SQM.
+
+        """
+        name = self.metrics[metric]
+        # Extract time and SQM vector.
+        return pd.DataFrame(np.array(sqm_res[f'Instantaneous{name}'], dtype=float).flatten(),
+                            index=np.array(sqm_res['time'], dtype=float).flatten(), columns=[metric,])
 
     @staticmethod
     def extract_instantaneous_loudness(loudness_res: dict,
@@ -151,7 +183,7 @@ class PySQAT:
     def _check_pa_parameters(wavfilename: str,
                              dbfs: int | float,
                              time_skip: int | float,
-                             loudness_field: int | float
+                             loudness_field: int | float,
                              ) -> None:
         """
         Check the input parameters of the psychoacoustic_annoyance functions in this class
@@ -190,7 +222,7 @@ class PySQAT:
                                              wavfilename: str,
                                              dbfs: int | float = 94.,
                                              time_skip: int | float = 0.,
-                                             loudness_field: int | float = 0.
+                                             loudness_field: int | float = 0.,
                                              ) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_Zwicker1999_from_wavfile.
@@ -201,7 +233,7 @@ class PySQAT:
         Parameters
         ----------
         wavfilename : str
-            Specifies the file name of a wav file to be processed.
+            Absolute path of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -259,7 +291,7 @@ class PySQAT:
                                         wavfilename: str,
                                         dbfs: int | float = 94.,
                                         time_skip: int | float = 0.,
-                                        loudness_field: int | float = 0.
+                                        loudness_field: int | float = 0.,
                                         ) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_Di2016_from_wavfile.
@@ -270,7 +302,7 @@ class PySQAT:
         Parameters
         ----------
         wavfilename : str
-            Specifies the file name of a wav file to be processed.
+            Absolute path of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -330,7 +362,7 @@ class PySQAT:
                                           wavfilename: str,
                                           dbfs: int | float = 94.,
                                           time_skip: int | float = 0.,
-                                          loudness_field: int | float = 0.
+                                          loudness_field: int | float = 0.,
                                           ) -> dict:
         """
         Wrapper for the SQAT function PsychoacousticAnnoyance_More2010_from_wavfile.
@@ -341,7 +373,7 @@ class PySQAT:
         Parameters
         ----------
         wavfilename : str
-            Specifies the file name of a wav file to be processed.
+            Absolute path of a wav file to be processed.
 
         dbfs : number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -402,7 +434,7 @@ class PySQAT:
                           dbfs: int | float = 94.,
                           field: int | float = 0.,
                           method: int | float = 2.,
-                          time_skip: int | float = 0.
+                          time_skip: int | float = 0.,
                           ) -> dict:
         """
         Wrapper for the SQAT function Loudness_ISO532_1_from_wavfile.
@@ -413,7 +445,7 @@ class PySQAT:
         Parameters
         ----------
         wavfilename: str
-            Specifies the file name of a wav file to be processed.
+            Absolute path of a wav file to be processed.
 
         dbfs: number, optional
             Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
@@ -472,3 +504,100 @@ class PySQAT:
 
         dbfs, field, method, time_skip = float(dbfs), float(field), float(method), float(time_skip)
         return self.eng.Loudness_ISO532_1_from_wavfile(wavfilename, dbfs, field, method, time_skip, )
+
+    def process_directory(self,
+                          path: str,
+                          sqm: Literal['psychoacoustic_annoyance_zwicker1999', 'psychoacoustic_annoyance_di2016',
+                                       'psychoacoustic_annoyance_more2010', 'loudness_iso532_1'],
+                          dbfs: int | float = 94.,
+                          time_skip: int | float = 0.,
+                          loudness_field: int | float = 0.,
+                          ) -> None:
+        """
+        Process all wav files in the given directory, using one of the psychoacoustic annoyance functions in SQAT.
+        This function saves the results directly to csv file(s) with the same name(s) as the original wav files,
+        amended with the abbreviation for the sound quality metric.
+
+        Parameters
+        ----------
+        path: str
+            Absolute path to the directory with wav files to be processed.
+
+        sqm: str
+            Specific the SQM to process the wav files with.
+
+        dbfs : number, optional
+            Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
+            SPL, or dBFS=94. If the specified dBFS is different from 94 dB SPL, then a gain factor will be applied.
+            NOTE: value should be convertible to an integer.
+
+        time_skip : number, optional
+            Skip start of the signal in <time_skip> seconds for statistics calculations.
+            NOTE: value should be convertible to an integer.
+
+        loudness_field : number, optional
+            Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
+            more info.
+            NOTE: value should be convertible to an integer.
+
+        """
+        metrics = {'psychoacoustic_annoyance_zwicker1999': 'PA',
+                   'psychoacoustic_annoyance_di2016': 'PA',
+                   'psychoacoustic_annoyance_more2010': 'PA',
+                   'loudness_iso532_1': 'L',
+                   }
+        sqm_func = getattr(self, sqm)
+
+        for fname in os.listdir(path):
+            if fname.endswith('.wav'):
+                fpath = os.path.join(path, fname)
+                print(fpath)
+                sqm_res = sqm_func(fpath, dbfs, time_skip, loudness_field)
+
+                sqm_df = self.extract_instantaneous_sqm(sqm_res, metrics[sqm])
+                sqm_df.to_csv(fpath.replace('.wav', f'_{metrics[sqm]}.csv'))
+
+    def process_directory_pa(self,
+                             path: str,
+                             notation: Literal['zwicker1999', 'di2016', 'more2010'],
+                             dbfs: int | float = 94.,
+                             time_skip: int | float = 0.,
+                             loudness_field: int | float = 0.,
+                             ) -> None:
+        """
+        Process all wav files in the given directory, using one of the psychoacoustic annoyance functions in SQAT.
+        This function saves the results directly to csv file(s) with the same name(s) as the original wav files.
+
+        Parameters
+        ----------
+        path: str
+            Absolute path to the directory with wav files to be processed.
+
+        notation: str (Literal['zwicker1999', 'di2016', 'more2010'])
+            Specifies the formulation of PA to process the wav files with.
+
+        dbfs : number, optional
+            Full scale convention. Internally this algorithm works with a convention of full scale being equal to 94 dB
+            SPL, or dBFS=94. If the specified dBFS is different from 94 dB SPL, then a gain factor will be applied.
+            NOTE: value should be convertible to an integer.
+
+        time_skip : number, optional
+            Skip start of the signal in <time_skip> seconds for statistics calculations.
+            NOTE: value should be convertible to an integer.
+
+        loudness_field : number, optional
+            Choose field for loudness calculation; free field = 0; diffuse field = 1. See Loudness_ISO532_1 for
+            more info.
+            NOTE: value should be convertible to an integer.
+
+        """
+        pa_func = getattr(self, f'psychoacoustic_annoyance_{notation}')
+
+        for fname in os.listdir(path):
+            if fname.endswith('.wav'):
+                fpath = os.path.join(path, fname)
+                print(fpath)
+                pa_res = pa_func(fpath, dbfs, time_skip, loudness_field)
+
+                pa_df = self.extract_instantaneous_sqms(pa_res)
+                pa_df.to_csv(fpath.replace('.wav', '.csv'))
