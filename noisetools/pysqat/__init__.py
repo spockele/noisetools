@@ -109,7 +109,7 @@ class PySQAT:
 
         # Loop over the metrics to be extracted.
         for metric, name in self.metrics.items():
-            if metric in df.columns:
+            if metric in df.columns and metric != 'PA':
                 # Extract time and SQM vectors.
                 instantaneous_tme = np.array(pa_res[metric]['time'], dtype=float).flatten()
                 instantaneous_sqm = np.array(pa_res[metric][f'Instantaneous{name}'], dtype=float).flatten()
@@ -598,6 +598,5 @@ class PySQAT:
                 fpath = os.path.join(path, fname)
                 print(fpath)
                 pa_res = pa_func(fpath, dbfs, time_skip, loudness_field)
-
                 pa_df = self.extract_instantaneous_sqms(pa_res)
                 pa_df.to_csv(fpath.replace('.wav', '.csv'))
