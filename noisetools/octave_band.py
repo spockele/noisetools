@@ -1,6 +1,20 @@
 """Octave band related operations.
 """
-import matplotlib.pyplot as plt
+
+# Copyright 2024 Josephine Pockelé
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Iterable, Literal
 import pandas as pd
 import numpy as np
@@ -55,7 +69,6 @@ class OctaveBand:
             raise ValueError(f'This function only supports 1D interpolation to narrowband.')
 
         result = np.zeros(f_interpolate.size)
-        bands_interpolate = self.f_to_band(f_interpolate)
         bands_octave = self.f_to_band(f_octave)
 
         if extrapolate.lower() == 'slope_to_zero':
@@ -73,8 +86,8 @@ class OctaveBand:
 
         elif extrapolate.lower() == 'zero':
             dat_intermediate = np.zeros(self.f.index.size)
-            non_zero = (f_octave[0] <= self.f['fc']) & (self.f['fc'] <= f_octave[-1])
-            dat_intermediate[non_zero] = np.interp(self.f.index, bands_octave, dat_octave)
+            non_zero = (f_octave[0] <= self.f['fu']) & (self.f['fl'] <= f_octave[-1])
+            dat_intermediate[non_zero] = np.interp(self.f.index[non_zero], bands_octave, dat_octave)
 
         else:
             raise ValueError(f"Unknown extrapolation method '{extrapolate}'. "
