@@ -600,3 +600,22 @@ class PySQAT:
                 pa_res = pa_func(fpath, dbfs, time_skip, loudness_field)
                 pa_df = self.extract_instantaneous_sqms(pa_res)
                 pa_df.to_csv(fpath.replace('.wav', '.csv'))
+
+
+def loudness_to_loudnesslevel(loudness: np.ndarray):
+    """
+    Convert Loudness in sone to the Loudness Level in phon.
+
+    Parameters
+    ----------
+    loudness: np.ndarray
+        Loudness in sone
+
+    Returns
+    -------
+    Loudness Level in phon, in the same format as the input array.
+    """
+    ln = 40 + 10 * np.log2(loudness)
+    ln[loudness < 1] = 40 * loudness ** 0.35
+
+    return ln
