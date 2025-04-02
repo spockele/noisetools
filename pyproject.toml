@@ -30,7 +30,6 @@ classifiers=[
     'Operating System :: Microsoft :: Windows :: Windows 11',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3 :: Only',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Physics',
     'Topic :: Utilities',
