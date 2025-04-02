@@ -358,10 +358,10 @@ class WavFile:
 
         if filename is None:
             filename = self.filename.replace('.wav', '_export.wav')
-        elif filename == self.filename and write:
+        elif filename == self.filename and write and os.path.isfile(self.filename):
             raise FileExistsError(f"Filename of the WavFile export equals the original filename ({self.filename}). "
                                   f"Please choose a different filename or set write=False.")
-        elif filename == self.filename:
+        elif filename == self.filename and os.path.isfile(self.filename):
             warnings.warn(f"Filename of the WavFile export equals the original filename ({self.filename}). It is "
                           f"recommended to choose a different filename for exporting sections of the signal.")
 
