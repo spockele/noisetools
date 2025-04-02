@@ -8,7 +8,8 @@ name='noisetools'
 version='0.0.3'
 description='A Python toolbox with all the specialty signal analysis tools for my PhD.'
 readme='README.md'
-license = {file = "LICENSE"}
+license = 'Apache-2.0 AND CC-BY-NC-4.0'
+license-files = ['LICENSE', 'noisetools/pysqat/SQAT-1.2/LICENSE']
 authors=[
     {'name' = 'Josephine Siebert Pockelé', email='j.s.pockele@tudelft.nl'}
 ]
@@ -33,7 +34,6 @@ classifiers=[
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Physics',
     'Topic :: Utilities',
-    'License :: OSI Approved :: Apache Software License',
 ]
 
 [tool.setuptools]
