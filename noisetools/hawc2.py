@@ -38,7 +38,7 @@ def read_hawc2_res(model_path: str | os.PathLike,
 
     Returns
     -------
-    - DataFrame with info from the sel file (channel table).
+    - DataFrame with info from the .sel file (channel table).
     - DataFrame with all data from simulation.
 
     References
@@ -52,10 +52,11 @@ def read_hawc2_res(model_path: str | os.PathLike,
     fname = os.path.join(model_path, output_filename)
     # Read the sel file
     sel_file = pd.read_fwf(fname + '.sel', skiprows=12, header=None, skipfooter=1, index_col=0,
-                           widths=[12, 32, 10, 120])
+                           widths=[12, 32, 10, 120], )
     # Read the data file and shift the column numbers to correspond to the channel numbers
-    dat_file = pd.read_csv(fname + '.dat', delimiter='\s+', header=None, index_col=0)
-    dat_file.columns = dat_file.columns + 1
+    dat_file = pd.read_csv(fname + '.dat', delimiter='\s+', header=None, index_col=0, )
+    dat_file.columns = list(sel_file.loc[2:, 1])
+    dat_file.index = np.round(dat_file.index, 9)
 
     return sel_file, dat_file
 
