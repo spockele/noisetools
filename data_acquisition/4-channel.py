@@ -26,12 +26,12 @@ import os
 
 # Define NI cDAQ parameters.
 daq_id = 'cDAQ1Mod1'
-channels = ['ai0', 'ai1', ]
-sensitivity = [11.79, 11.82, ]
+channels = ['ai0', 'ai1', 'ai2', 'ai3', ]
+sensitivity = [1., 1., 1., 1., ]
 
 # Define recording parameters.
 fs = 51.2e3
-t_record = 11.
+t_record = 10.
 
 
 if __name__ == '__main__':
@@ -53,17 +53,16 @@ if __name__ == '__main__':
         repeat = True
         while repeat:
             # Ask for a filename
-            # Set a default "out_xxx.wav" filename
             out_filename = input('Enter output filename (defaults to <timestamp>.csv): ')
             # Set a default timestamp filename
             if not out_filename:
                 timestamp = '_'.join(time.ctime(time.time()).replace(":", "-").split())
-                out_filename = f'{timestamp}.wav'
+                out_filename = f'{timestamp}.csv'
                 print(f'\tDefaulted to {out_filename}')
 
             # Make sure the filename has the '.wav' extension.
-            elif not out_filename.endswith('.wav'):
-                out_filename = out_filename + '.wav'
+            elif not out_filename.endswith('.csv'):
+                out_filename = out_filename + '.csv'
             # Set the full output path.
             out_path = os.path.join('measurements', out_filename)
 
@@ -73,13 +72,9 @@ if __name__ == '__main__':
             dat = task.read(READ_ALL_AVAILABLE, timeout=t_record)
             print('\tDone!')
 
-            # Save the data to a WAV file.
             dat = np.array(dat).T
-            wav = WavFile(out_path, norm=1., wav=dat, fs=int(fs))
-            wav.write()
-
             # Create a pandas DataFrame and store it as csv.
-            df = pd.DataFrame(dat, index=np.linspace(0., t_record, num=wav.length), columns=['left', 'right'])
+            df = pd.DataFrame(dat, index=np.linspace(0., t_record, num=dat.shape[0]), columns=channels)
             df.to_csv(out_path.replace('.wav', '.csv'))
 
             # Let user break the loop.
