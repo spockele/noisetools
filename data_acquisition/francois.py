@@ -70,7 +70,7 @@ if __name__ == '__main__':
             # Measure after user start.
             input('Press enter to start measurement: ')
             task.timing.cfg_samp_clk_timing(fs, samps_per_chan=n_samples, )
-            dat = task.read(READ_ALL_AVAILABLE, timeout=t_record)
+            dat = task.read(READ_ALL_AVAILABLE, timeout=t_record + .01)
             print('\tDone!')
 
             # Save the data to a WAV file.
