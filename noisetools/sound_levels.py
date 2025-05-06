@@ -40,7 +40,7 @@ def equivalent_pressure(signal: list | np.ndarray,
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     t: list | np.ndarray, optional
-        Optional input of the time series corresponding to the signal.
+        Optional input of the time series, or the start and end time of the signal.
 
     Returns
     -------
@@ -54,13 +54,9 @@ def equivalent_pressure(signal: list | np.ndarray,
     if len(signal.shape) > 1:
         raise ValueError('noisetools.ospl only supports 1d signal arrays.')
 
-    # Ensure the time series is correct.
-    if t is not None and not isinstance(t, np.ndarray):
-        t = np.array(t)
-    elif t is None:
-        t = np.linspace(0, signal.size / fs, signal.size)
-    if t.size != signal.size:
-        raise ValueError(f'Shape mismatch: "t" and "signal" should have the same length: {t.size} != {signal.size}')
+    # Define the start and end time of the signal, in case a time series is missing.
+    if t is None:
+        t = (0, signal.size / fs)
 
     # Apply the selected weighting
     if weighting is not None:
@@ -87,7 +83,7 @@ def ospl(signal: list | np.ndarray,
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     t: list | np.ndarray, optional
-        Optional input of the time series corresponding to the signal.
+        Optional input of the time series, or the start and end time of the signal.
 
     Returns
     -------
@@ -116,7 +112,7 @@ def ospl_t(signal: list | np.ndarray,
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     t: list | np.ndarray, optional
-        Optional input of the time series corresponding to the signal.
+        Optional input of the time series of the signal.
     delta_t: float | np.number, optional (default=1.)
         Desired timestep in the OSPL output, in seconds.
 
