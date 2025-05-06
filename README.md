@@ -1,13 +1,14 @@
-# Josephine's Bag of Tricks
-A Python toolbox with all the specialty signal analysis tools for my PhD.
+# Python Noise Toolbox (Noisetools)
+A Python noise analysis and research toolbox developed for my PhD.
 
-### Developed by:
-- [ir. Josephine Siebert Pockelé](https://orcid.org/0009-0002-5152-9986)
-  - PhD Candidate, [TU Delft Aircraft Noise and Climate Effects Section](https://www.tudelft.nl/lr/organisatie/afdelingen/control-and-operations/aircraft-noise-and-climate-effects-ance).
-  - Email: [j.s.pockele@tudelft.nl](mailto:j.s.pockele@tudelft.nl)
-  - LinkedIn: [Josephine (Fien) Pockelé](https://www.linkedin.com/in/josephine-pockele)
+[**_Josephine Pockelé_**](https://orcid.org/0009-0002-5152-9986)\
+PhD Candidate, [TU Delft, faculty of Aerospace Engineering](https://www.tudelft.nl/lr/).\
+Email: [j.s.pockele@tudelft.nl](mailto:j.s.pockele@tudelft.nl)\
+LinkedIn: [Josephine Pockelé](https://www.linkedin.com/in/josephine-pockele)
 
-## Modules
+
+## Noisetools Package
+The primary component of this repository is the _noisetools_ package.
 
 ### pySQAT
 Translation layer to run SQAT with this toolbox. Contains SQAT v1.2 inside to allow for running [[1](#greco2023)].\
@@ -23,7 +24,7 @@ Functions to make working with WinTAur Lite easier. Currently compatible with la
 Technische Universiteit Delft hereby disclaims all copyright interest in the program “noisetools”, a Python toolbox for noise analysis in scientific research, written by the Author(s).\
 Henri Werij, Faculty of Aerospace Engineering, Technische Universiteit Delft.
 
-Copyright 2024 Josephine Pockelé
+Copyright 2025 Josephine Pockelé
 
 Licensed under the Apache License, Version 2.0 (the "License"); 
 you may not use this file except in compliance with the License. 
