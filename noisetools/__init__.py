@@ -3,7 +3,7 @@
 Created by Josephine Siebert Pockelé, PhD Candidate.
 """
 
-# Copyright 2024 Josephine Pockelé
+# Copyright 2025 Josephine Pockelé
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

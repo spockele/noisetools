@@ -1,7 +1,7 @@
 """Functions to interact with wav files.
 """
 
-# Copyright 2024 Josephine Pockelé
+# Copyright 2025 Josephine Pockelé
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@ class WavFile:
     fs: int, optional
         Sampling frequency of input array 'wav'.
         NOTE: this parameter should be included when wav is defined.
+    pcm: str, optional
+
 
     Attributes
     ----------

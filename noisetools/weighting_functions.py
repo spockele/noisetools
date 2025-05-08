@@ -1,7 +1,7 @@
 """Spectral weighting functions for acoustic processing.
 """
 
-# Copyright 2024 Josephine Pockelé
+# Copyright 2025 Josephine Pockelé
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -317,8 +317,8 @@ if __name__ == '__main__':
     w, h = spsig.sosfreqz(sos, fs=51.2e3)
     plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
 
-    plt.ylim(-60, 6)
-    plt.yticks(np.arange(-60, 6 + 6, 6))
+    plt.ylim(-42, 6)
+    plt.yticks(np.arange(-42, 6 + 6, 6))
     plt.ylabel('Attenuation (dB)')
     plt.xlim(10, 25e3)
     plt.xlabel('f (Hz)')
@@ -352,8 +352,8 @@ if __name__ == '__main__':
     w, h = spsig.sosfreqz(sos, fs=51.2e3)
     plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
 
-    plt.ylim(-24, 6)
-    plt.yticks(np.arange(-24, 6 + 6, 6))
+    plt.ylim(-42, 6)
+    plt.yticks(np.arange(-42, 6 + 6, 6))
     plt.ylabel('Attenuation (dB)')
     plt.xlim(10, 25e3)
     plt.xlabel('f (Hz)')
