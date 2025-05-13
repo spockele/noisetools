@@ -22,7 +22,7 @@ import numpy as np
 
 class OctaveBand:
     """
-    Class to handle operations with Octave bands
+    Class to handle operations with Octave bands. Compliant with the IEC 61260-1:2014 standard. [1]_
 
     Parameters
     ----------
@@ -38,6 +38,12 @@ class OctaveBand:
         DataFrame containing the frequency information of this OctaveBand object.
         Index contains the band numbers. Columns 'fc', 'fl', 'fu' contain the central, lower, and upper frequencies of
         the bands, respectively. 'df' defines the bandwidth of each band.
+
+    References
+    ----------
+    .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Octave-band and fractional-octave-band
+        filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2013, Feb. 2014.
+
     """
     def __init__(self, order: int = 3, band_range: tuple[int, int] = None):
         if band_range is None:
@@ -59,9 +65,10 @@ class OctaveBand:
         self.band_range = band_range
         self.f = pd.DataFrame(index=pd.Index(bands, name='band nr.'), columns=['fl', 'fc', 'fu', 'df'])
 
-        self.f.loc[:, 'fc'] = 1e3 * 2 ** (self.f.index / order)
-        self.f.loc[:, 'fl'] = self.f.loc[:, 'fc'] / 2 ** (1 / (2 * order))
-        self.f.loc[:, 'fu'] = self.f.loc[:, 'fc'] * 2 ** (1 / (2 * order))
+        g = 10 ** (3 / 10)
+        self.f.loc[:, 'fc'] = 1e3 * g ** (self.f.index / order)
+        self.f.loc[:, 'fl'] = self.f.loc[:, 'fc'] * g ** (-1 / (2 * order))
+        self.f.loc[:, 'fu'] = self.f.loc[:, 'fc'] * g ** (1 / (2 * order))
         self.f.loc[:, 'df'] = self.f.loc[:, 'fu'] - self.f.loc[:, 'fl']
 
     def f_to_band(self,
