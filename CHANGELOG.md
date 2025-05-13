@@ -23,8 +23,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```wavfile``` module with ```WavFile``` class.\
   - Functions to resample, write to file, export part of the audio signal.
   - Stores information like the sampling frequency, number of samples, duration in seconds, and a time series corresponding to the samples.
-- ```loudness_iso532_1``` function added to ```PySQAT```.
+- ```PySQAT``` class in ```pysqat```: 
+  - Added ```loudness_iso532_1``` function.
+  - Added functions to process whole directories.
+- ```pysqat``` package: Added function to convert loudness to loudness level.
 - Function to extract all loudness information from result dictionary added to ```PySQAT```.
+- ```octave_band``` module with ```OctaveBand``` class.
+  - Functions to work with frequency domain data in Octave Bands.
+  - Designed to comply with IEC 61260-1:2014.
+
+
+- Created Data Acquisition scripts for NI cDAQ devices.
 
 ### Changed
 - Updated included ```SQAT``` version to v1.2.
@@ -33,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+- Removed the ```tone_generation``` module, because it was not very usefull.
 
 ### Fixed
 
@@ -62,4 +72,6 @@ This is a composition of a collection of functions from my MSc. Thesis, that wer
 - Functions to enable spectral weighting in time and frequency domain (weighting_functions.py)
 - Tone generation function to allow for the creation of tonal signals with ease (tone_generation.py)
 - Determination of the sound levels, with and without weighting (sound_levels.py)
-- Created a basic translation layer to easily run SQAT through Python. Currently supports the direct computation of the three formulations of Pyschoacoustic annoyance. Other metrics are also obtained through these functions.
+- Created a basic translation layer to easily run SQAT through Python. 
+  - Currently supports the direct computation of the three formulations of Pyschoacoustic annoyance. 
+  - Other metrics are also obtained through these functions.
