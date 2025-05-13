@@ -16,7 +16,6 @@
 # limitations under the License.
 
 from nidaqmx.constants import READ_ALL_AVAILABLE
-from noisetools.wavfile import WavFile
 import nidaqmx as ni
 import pandas as pd
 import numpy as np
