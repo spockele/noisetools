@@ -184,7 +184,7 @@ def c_weighting(f: float | int | np.number | list | np.ndarray, c_1000: float = 
 
 def weighting_filter(curve: str = 'A', analog: bool = False, output: str = 'ba', fs: float = 51.2e3, ):
     """
-    Returns the filter design for the weighting filters defined in IEC 61672-1:2013.
+    Returns the filter design for the weighting filters defined in IEC 61672-1:2013. [1]_
 
     Parameters
     ----------
@@ -283,6 +283,9 @@ def weigh_signal(signal: list | np.ndarray, fs: int | float | np.number, curve: 
 
 
 if __name__ == '__main__':
+    """
+    Compliance checks for IEC 61672-1:2013.
+    """
     import matplotlib.pyplot as plt
     import pandas as pd
 
