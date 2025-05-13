@@ -1,12 +1,5 @@
 """Translation layer to run SQAT [1]_ through Python.
 
-Written for the following combination of MATLAB, Python and matlabengine versions:
-- MATLAB release R2023b
-- Python 3.11
-- matlabengine 23.2.2
-
-Other combinations will probably break the installation noisetools, but are not guaranteed to work anyway.
-
 References
 ----------
 .. [1] Gil Felix Greco, Roberto Merino-Martínez, and Alejandro Osses, ‘SQAT: a sound quality analysis toolbox for MATLAB’.
