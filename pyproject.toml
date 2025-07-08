@@ -5,8 +5,8 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name='noisetools'
-version='0.0.3'
-description='A Python toolbox with all the specialty signal analysis tools for my PhD.'
+version='0.1.0'
+description='A Python toolbox with all the signal analysis and research tools for my PhD.'
 readme='README.md'
 license = 'Apache-2.0 AND CC-BY-NC-4.0'
 license-files = ['LICENSE', 'noisetools/pysqat/SQAT-1.2/LICENSE']
@@ -39,7 +39,7 @@ classifiers=[
 include-package-data = true
 
 [tool.setuptools.packages.find]
-exclude = ['nrel', ]
+exclude = ['nrel', 'ntk', ]
 
 [project.optional-dependencies]
 pysqat = [
