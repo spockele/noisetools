@@ -87,7 +87,7 @@ class OctaveBand:
         A numpy array containing the band numbers. Array will have same shape as the input array.
         """
         f: np.ndarray = np.array(f, dtype=float)
-        bands = np.empty(f.shape, dtype=int)
+        bands = np.empty(f.shape, dtype=float)
         bands[:] = np.nan
 
         for bi, band in enumerate(self.f.index):
@@ -96,7 +96,7 @@ class OctaveBand:
 
             bands[f == self.f.loc[band, 'fl']] = band - .5
 
-        return bands
+        return bands.astype(int)
 
     def interp1d_to_narrowband(self,
                                f_interpolate: np.ndarray | Iterable,
