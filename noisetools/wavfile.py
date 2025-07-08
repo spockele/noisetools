@@ -70,6 +70,7 @@ class WavFile:
         String representation of the signal(s) duration in mm:ss:ms_.
     t: numpy.ndarray
         Array containing the time vector of the WAV file in seconds.
+
     """
     def __init__(self,
                  filename: str,
@@ -184,6 +185,7 @@ class WavFile:
         Returns
         -------
         A 2D array with shape (length, 2)
+
         """
         return np.concatenate([left_array.reshape(-1, 1), right_array.reshape(-1, 1)], axis=1)
 
@@ -211,12 +213,14 @@ class WavFile:
         Returns
         -------
         An instance of WavFile with the given signal information.
+
         """
         wav = cls._two_channel_to_wav(left_array, right_array)
         return cls(filename, wav=wav, fs=fs)
 
     @staticmethod
-    def seconds_to_mmssms(t: int | float) -> str:
+    def seconds_to_mmssms(t: int | float,
+                          ) -> str:
         """
         Convert seconds to a mm:ss:ms_ format (e.g. 72.512s -> 01:12:512)
 
@@ -228,6 +232,7 @@ class WavFile:
         Returns
         -------
         The given time in a mm:ss:ms_ string format.
+
         """
         mm = str(int(t / 60)).zfill(2)
         ss = str(int(t % 60)).zfill(2)
@@ -236,7 +241,8 @@ class WavFile:
         return f'{mm}:{ss}:{ms}'
 
     @staticmethod
-    def mmssms_to_seconds(t: str) -> float:
+    def mmssms_to_seconds(t: str,
+                          ) -> float:
         """
         Convert a mm:ss:ms_ format to seconds (e.g. 01:12:512 -> 72.512s)
 
@@ -249,13 +255,15 @@ class WavFile:
         Returns
         -------
         Float with the time in seconds.
+
         """
         mm, ss, ms = t.split(':')
         mm, ss, ms = int(mm), int(ss), int(ms[:3])
 
         return 60 * mm + ss + ms / 1e3
 
-    def check_mono(self) -> bool:
+    def check_mono(self,
+                   ) -> bool:
         """
         Determine whether the signal in this WAV file is mono.
         """
@@ -271,6 +279,7 @@ class WavFile:
         ----------
         fs: int
             New sampling frequency for the signal in Hertz (Hz)
+
         """
         # Don't do anything if the sampling frequency is equal.
         if self.fs == fs:
@@ -305,6 +314,7 @@ class WavFile:
         filename: str, optional
             Optional filename, if writing to a different file is desired.
             This will change the WavFile objects self.filename.
+
         """
         self.filename = self.filename if filename is None else filename
 
@@ -347,6 +357,7 @@ class WavFile:
         Returns
         -------
         A new instance of WavFile with the signal information between t0 and t1.
+
         """
         if fs is not None:
             self.resample(fs)

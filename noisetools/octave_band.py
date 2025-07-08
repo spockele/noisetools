@@ -45,7 +45,10 @@ class OctaveBand:
         filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2013, Feb. 2014.
 
     """
-    def __init__(self, order: int = 3, band_range: tuple[int, int] = None):
+    def __init__(self,
+                 order: int = 3,
+                 band_range: tuple[int, int] = None,
+                 ) -> None:
         if band_range is None:
             if order == 1:
                 bands = np.arange(-9, 5)
@@ -85,6 +88,7 @@ class OctaveBand:
         Returns
         -------
         A numpy array containing the band numbers. Array will have same shape as the input array.
+
         """
         f: np.ndarray = np.array(f, dtype=float)
         bands = np.empty(f.shape, dtype=float)
@@ -129,6 +133,7 @@ class OctaveBand:
         Returns
         -------
         Interpolated values.
+
         """
         f_interpolate: np.ndarray = np.array(f_interpolate)
         f_octave: np.ndarray = np.array(f_octave)

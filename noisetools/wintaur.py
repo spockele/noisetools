@@ -64,7 +64,8 @@ class WinTAurCase(ConfigObj):
             super().__init__(self.case_path, configspec=configspec)
             self.validate_case()
 
-    def validate_case(self):
+    def validate_case(self,
+                      ) -> None:
         """
         Function to do the validation of a new WinTAur case.
         """
@@ -123,8 +124,8 @@ class WinTAurProject:
     ----------
     project_path: str | os.PathLike
         Path to the WinTAur Lite project folder.
-    """
 
+    """
     def __init__(self,
                  project_path: str | os.PathLike,
                  new: bool = False,

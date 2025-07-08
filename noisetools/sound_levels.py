@@ -45,6 +45,7 @@ def equivalent_pressure(signal: list | np.ndarray,
     Returns
     -------
     Equivalent pressure in Pa^2 (weighted to selected weighting)
+
     """
     # Convert signal to numpy array
     if not isinstance(signal, np.ndarray):
@@ -88,6 +89,7 @@ def ospl(signal: list | np.ndarray,
     Returns
     -------
     Overall sound pressure level in dB (weighted to selected weighting)
+
     """
     pe2 = equivalent_pressure(signal, fs, weighting, t=t)
 
@@ -122,6 +124,7 @@ def ospl_t(signal: list | np.ndarray,
         - Time (seconds) at which the OSPL is calculated. Determined as the central timestamp in the
             sections of length delta_t.
         - OPSL (dB) (weighted to selected weighting) at the timestamps defined in the time array.
+
     """
     # Ensure the time series is correct.
     if t is not None and not isinstance(t, np.ndarray):

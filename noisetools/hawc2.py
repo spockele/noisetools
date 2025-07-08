@@ -63,7 +63,8 @@ def read_hawc2_res(model_path: str | os.PathLike,
 
 def fname_hawc2_noise_psd(model_path: str | os.PathLike,
                           output_filename: str,
-                          obs: int,) -> str:
+                          obs: int,
+                          ) -> str:
     """
     Return the file name of a HAWC2 noise PSD file, given the inputs for a HAWC2 noise simulation.
 
@@ -160,7 +161,8 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     # Extract the timestamps to use in the multi-index of the noise DataFrame.
     dft = np.repeat(df_header.index, nfreq)
 
-    def skiprows_func(row_idx: int) -> bool:
+    def skiprows_func(row_idx: int,
+                      ) -> bool:
         """
         !! INTERNAL FUNCTION OF read_hawc2_noise_psd() !!
         Function for pd.read_csv to determine which rows of the HAWC2 aero_noise output file to skip.

@@ -65,6 +65,7 @@ def weighting_poles() -> tuple[float, float, float, float]:
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+
     """
     # Reference, and low- and high-pass cutoff frequencies of the c-weighting
     fr, fl, fh = 1e3, 10. ** 1.5, 10. ** 3.9
@@ -85,7 +86,9 @@ def weighting_poles() -> tuple[float, float, float, float]:
     return f1, f2, f3, f4
 
 
-def a_weighting(f: float | int | np.number | list | np.ndarray, a_1000: float = None) -> float | np.ndarray:
+def a_weighting(f: float | int | np.number | list | np.ndarray,
+                a_1000: float = None,
+                ) -> float | np.ndarray:
     """
     A frequency weighting network A(f) defined by Equation E.6 in the IEC 61672-1:2013 standard. [1]_
 
@@ -105,6 +108,7 @@ def a_weighting(f: float | int | np.number | list | np.ndarray, a_1000: float = 
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+
     """
     f_is_num = False
     if isinstance(f, list):
@@ -134,7 +138,9 @@ def a_weighting(f: float | int | np.number | list | np.ndarray, a_1000: float = 
     return 20 * np.log10(delta_l_a) - a_1000
 
 
-def c_weighting(f: float | int | np.number | list | np.ndarray, c_1000: float = None) -> float | np.ndarray:
+def c_weighting(f: float | int | np.number | list | np.ndarray,
+                c_1000: float = None,
+                ) -> float | np.ndarray:
     """
     C frequency weighting network C(f) defined by Equation E.1 in the IEC 61672-1:2013 standard. [1]_
 
@@ -154,6 +160,7 @@ def c_weighting(f: float | int | np.number | list | np.ndarray, c_1000: float = 
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+
     """
     f_is_num = False
     if isinstance(f, list):
@@ -182,7 +189,11 @@ def c_weighting(f: float | int | np.number | list | np.ndarray, c_1000: float = 
     return 20 * np.log10(delta_l_c) - c_1000
 
 
-def weighting_filter(curve: str = 'A', analog: bool = False, output: str = 'ba', fs: float = 51.2e3, ):
+def weighting_filter(curve: str = 'A',
+                     analog: bool = False,
+                     output: str = 'ba',
+                     fs: float = 51.2e3,
+                     ):
     """
     Returns the filter design for the weighting filters defined in IEC 61672-1:2013. [1]_
 
@@ -215,6 +226,7 @@ def weighting_filter(curve: str = 'A', analog: bool = False, output: str = 'ba',
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
         Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+
     """
     # Get the pole frequencies from equations E.2, E.7, E.8 and E.3
     f1, f2, f3, f4 = weighting_poles()
