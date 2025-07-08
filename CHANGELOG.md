@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [//]: # (### Fixed)
 
+## [v0.1.0]
+Public version of this repository. No functional differences from v0.0.3.
+
+
 ## [v0.0.3]
 
 ### Added
@@ -39,12 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated included ```SQAT``` version to v1.2.
 - Default sampling frequency of WinTAur Lite output changed to 48 kHz to match ```SQAT```.
 
-### Deprecated
-
 ### Removed
 - Removed the ```tone_generation``` module, because it was not very usefull.
-
-### Fixed
 
 
 ## [v0.0.2]
