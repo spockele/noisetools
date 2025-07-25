@@ -26,7 +26,6 @@ __all__ = ['equivalent_pressure', 'ospl', 'ospl_t', ]
 def equivalent_pressure(signal: list | np.ndarray,
                         fs: int | float | np.number,
                         weighting: str = None,
-                        t: list | np.ndarray = None,
                         ) -> float:
     """
     Calculate the equivalent pressure (Pe^2) of the input sound signal.
@@ -39,8 +38,6 @@ def equivalent_pressure(signal: list | np.ndarray,
         The sampling frequency of the digital signal
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    t: list | np.ndarray, optional
-        Optional input of the time series, or the start and end time of the signal.
 
     Returns
     -------
@@ -55,22 +52,17 @@ def equivalent_pressure(signal: list | np.ndarray,
     if len(signal.shape) > 1:
         raise ValueError('noisetools.ospl only supports 1d signal arrays.')
 
-    # Define the start and end time of the signal, in case a time series is missing.
-    if t is None:
-        t = (0, signal.size / fs)
-
     # Apply the selected weighting
     if weighting is not None:
         signal = weigh_signal(signal, fs, curve=weighting)
 
     # Determine the equivalent pressure
-    return 1 / (t[-1] - t[0]) * np.trapezoid(signal ** 2, t)
+    return 1 / signal.size * np.trapezoid(signal ** 2)
 
 
 def ospl(signal: list | np.ndarray,
          fs: int | float | np.number,
          weighting: str = None,
-         t: list | np.ndarray = None,
          ) -> float:
     """
     Calculate the Overall Sound Pressure Level of the input sound signal.
@@ -83,15 +75,13 @@ def ospl(signal: list | np.ndarray,
         The sampling frequency of the digital signal.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    t: list | np.ndarray, optional
-        Optional input of the time series, or the start and end time of the signal.
 
     Returns
     -------
     Overall sound pressure level in dB (weighted to selected weighting)
 
     """
-    pe2 = equivalent_pressure(signal, fs, weighting, t=t)
+    pe2 = equivalent_pressure(signal, fs, weighting, )
 
     return 10 * np.log10(pe2 / (2e-5 ** 2))
 
@@ -126,6 +116,10 @@ def ospl_t(signal: list | np.ndarray,
         - OPSL (dB) (weighted to selected weighting) at the timestamps defined in the time array.
 
     """
+    # Convert signal to numpy array
+    if not isinstance(signal, np.ndarray):
+        signal = np.array(signal)
+
     # Ensure the time series is correct.
     if t is not None and not isinstance(t, np.ndarray):
         t = np.array(t)
@@ -140,6 +134,6 @@ def ospl_t(signal: list | np.ndarray,
     for ti, t0 in enumerate(t_out):
         select = (t0 <= t) & (t < t0 + delta_t)
 
-        ospl_out[ti] = ospl(signal[select], fs, weighting=weighting, t=t[select])
+        ospl_out[ti] = ospl(signal[select], fs, weighting=weighting)
 
     return t_out + delta_t / 2, ospl_out
