@@ -161,8 +161,12 @@ cython_debug/
 
 # Some items to exclude
 DTU_NTK_DATASET.zip
-nrel/
-ntk/
+
+turbines/nrel/
+turbines/nrel_discon/
+turbines/ntk/
+turbines/dtu/
+
 xfoil.exe
 
 # Ignore measurement folder in the data_acquisition module
