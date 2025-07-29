@@ -25,6 +25,7 @@ __all__ = ['read_hawc2_res', 'read_hawc2_noise_psd', 'read_hawc2_bldata', 'write
 
 def read_hawc2_res(model_path: str | os.PathLike,
                    output_filename: str,
+                   numbered_columns: bool = False,
                    ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Read the HAWC2 simulation output files for a given file name. The HAWC2 output has to be set to ASCII format.
@@ -35,6 +36,8 @@ def read_hawc2_res(model_path: str | os.PathLike,
         Path to the HAWC2 model of which to read the results.
     output_filename: str
         Relative path to the output files, without file extensions. (same as parameter output.filename in HAWC2 [1]_)
+    numbered_columns: bool, optional (default = False)
+        Replace the column names from the .sel file with channel numbers.
 
     Returns
     -------
@@ -55,7 +58,10 @@ def read_hawc2_res(model_path: str | os.PathLike,
                            widths=[12, 32, 10, 120], )
     # Read the data file and shift the column numbers to correspond to the channel numbers
     dat_file = pd.read_csv(fname + '.dat', delimiter='\s+', header=None, index_col=0, )
-    dat_file.columns = list(sel_file.loc[2:, 1])
+    if numbered_columns:
+        dat_file.columns = dat_file.columns + 1
+    else:
+        dat_file.columns = list(sel_file.loc[2:, 1])
     dat_file.index = np.round(dat_file.index, 9)
 
     return sel_file, dat_file
