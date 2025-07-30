@@ -16,8 +16,13 @@
 # limitations under the License.
 
 from typing import Iterable, Literal
+import matplotlib.pyplot as plt
+import scipy.signal as spsig
 import pandas as pd
 import numpy as np
+
+
+g = 10 ** (3 / 10)
 
 
 class OctaveBand:
@@ -36,7 +41,7 @@ class OctaveBand:
     ----------
     f: pd.DataFrame
         DataFrame containing the frequency information of this OctaveBand object.
-        Index contains the band numbers. Columns 'fc', 'fl', 'fu' contain the central, lower, and upper frequencies of
+        Index contains the band numbers. Columns 'fm', 'f1', 'f2' contain the central, lower, and upper frequencies of
         the bands, respectively. 'df' defines the bandwidth of each band.
 
     References
@@ -51,27 +56,26 @@ class OctaveBand:
                  ) -> None:
         if band_range is None:
             if order == 1:
-                bands = np.arange(-9, 5)
+                band_range = (-9, 5)
             elif order == 3:
-                bands = np.arange(-27, 15)
+                band_range = (-27, 15)
             elif order == 6:
-                bands = np.arange(-54, 29)
+                band_range = (-54, 29)
             elif order == 12:
-                bands = np.arange(-108, 61)
+                band_range = (-108, 57)
             else:
                 raise ValueError(f'Default band ranges only defined for orders (1, 3, 6, 12). For order={order}, '
                                  f'define band_range.')
-        else:
-            bands = np.arange(*band_range)
+
+        bands = np.arange(*band_range, )
 
         self.order = order
-        self.band_range = band_range
+        self.band_range = (band_range[0], band_range[1] - 1)
         self.f = pd.DataFrame(index=pd.Index(bands, name='band nr.'), columns=['fl', 'fc', 'fu', 'df'])
 
-        g = 10 ** (3 / 10)
-        self.f.loc[:, 'fc'] = 1e3 * g ** (self.f.index / order)
-        self.f.loc[:, 'fl'] = self.f.loc[:, 'fc'] * g ** (-1 / (2 * order))
-        self.f.loc[:, 'fu'] = self.f.loc[:, 'fc'] * g ** (1 / (2 * order))
+        self.f.loc[:, 'fm'] = 1e3 * g ** (self.f.index / order)
+        self.f.loc[:, 'f1'] = self.f.loc[:, 'fm'] * g ** (-1 / (2 * order))
+        self.f.loc[:, 'f2'] = self.f.loc[:, 'fm'] * g ** (1 / (2 * order))
         self.f.loc[:, 'df'] = self.f.loc[:, 'fu'] - self.f.loc[:, 'fl']
 
     def f_to_band(self,
@@ -94,11 +98,11 @@ class OctaveBand:
         bands = np.empty(f.shape, dtype=float)
         bands[:] = np.nan
 
-        for bi, band in enumerate(self.f.index):
-            band_select = (self.f.loc[band, 'fl'] < f) & (f < self.f.loc[band, 'fu'])
+        for _, band in enumerate(self.f.index):
+            band_select = (self.f.loc[band, 'f1'] < f) & (f < self.f.loc[band, 'f2'])
             bands[band_select] = band
 
-            bands[f == self.f.loc[band, 'fl']] = band - .5
+            bands[f == self.f.loc[band, 'f1']] = band - .5
 
         return bands.astype(int)
 
@@ -172,7 +176,7 @@ class OctaveBand:
             # Initialise the interpolated data array.
             dat_intermediate = np.zeros(self.f.index.size)
             # Define the non-zero area for interpolation.
-            non_zero = (f_octave[0] <= self.f['fu']) & (self.f['fl'] <= f_octave[-1])
+            non_zero = (f_octave[0] <= self.f['f2']) & (self.f['f1'] <= f_octave[-1])
             # Interpolate the non-zero area linearly.
             dat_intermediate[non_zero] = np.interp(self.f.index[non_zero], bands_octave, dat_octave)
 
@@ -185,8 +189,95 @@ class OctaveBand:
         #       in f_octave and dat_octave. Hypothesis: no, because intermediate linear interpolation to self.f.index.
         for bi, band in enumerate(self.f.index):
             # Select the band based on the frequency.
-            band_select = (self.f.loc[band, 'fl'] <= f_interpolate) & (f_interpolate < self.f.loc[band, 'fu'])
+            band_select = (self.f.loc[band, 'f1'] <= f_interpolate) & (f_interpolate < self.f.loc[band, 'f2'])
             # Add the data from this band to the result array.
             result[band_select] = dat_intermediate[bi]
 
         return result
+
+    def band_filter(self,
+                    band: int,
+                    analog: bool = False,
+                    output: str = 'ba',
+                    fs: float = 51.2e3,
+                    ):
+        """
+        Design of a Butterworth bandpass filter for one singular octave band.
+
+        Parameters
+        ----------
+        band: int
+            Band number to design the band filter for.
+            NOTE: Only usable for bands with f2 below the sampling frequency.
+        analog: bool, optional
+            When True, return an analog filter, otherwise a digital filter is returned.
+        output: str, optional
+            Type of output: numerator/denominator (‘ba’), pole-zero (‘zpk’), or second-order sections (‘sos’).
+            Default is ‘ba’ for backwards compatibility, but ‘sos’ should be used for general-purpose filtering.
+        fs: float, optional
+            The sampling frequency of the digital system. Defaults to 51.2 kHz.
+
+        Returns
+        -------
+        b, a : numpy.ndarray, numpy.ndarray
+            Numerator (b) and denominator (a) polynomials of the IIR filter. Only returned if output='ba'.
+        z, p, k : numpy.ndarray, numpy.ndarray, float
+            Zeros, poles, and system gain of the IIR filter transfer function. Only returned if output='zpk'.
+        sos: numpy.ndarray
+            Second-order sections representation of the IIR filter. Only returned if output='sos'.
+
+        Notes
+        -----
+        This filter complies with the class 1 limits of IEC 61260-1:2013, Table 1 [1]_.
+
+        References
+        ----------
+        .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Octave-band and fractional-octave-band
+            filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2013, Feb. 2014.
+
+        """
+        f1, f2, fm = self.f.loc[band, ['f1', 'f2', 'fm']]
+
+        f2_bs = 1 + (g ** (1 / (2 * self.order)) - 1) / (g ** .5 - 1) * (g ** 1 - 1)
+        f1_bs = 1 / f2_bs
+
+        order, wn = spsig.buttord([f1, f2], [fm * f1_bs, fm * f2_bs], 2., 70, fs=fs)
+
+        return spsig.butter(order, wn, btype='bandpass', analog=analog, output=output, fs=fs)
+
+
+if __name__ == '__main__':
+    fs_select = 51.2e3
+    octave_select = 1
+    octave = OctaveBand(octave_select)
+
+    limit_table = pd.read_csv('octave_band_limits.csv', index_col=0)
+    plot_limit = (-1 <= limit_table.index) & (limit_table.index <= 1)
+    lti = limit_table.index.to_numpy()
+    lth = lti > 0
+    ltl = lti < 0
+
+    lti[lti == 0] = 1.
+    lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
+    lti[ltl] = 1 / lti[lth][::-1]
+
+    for band_select in octave.f.index[:-1]:
+        lti_band = lti * octave.f.loc[band_select, 'fm']
+        plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
+        plt.plot(lti_band, limit_table['limit 1+'], 'k--')
+
+        # plt.vlines([fm, ], -5, 90, colors='0.75', linestyles='--')
+        plt.vlines(octave.f.loc[band_select, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
+
+        # sos digital type
+        sos = octave.band_filter(band_select, analog=False, output='sos', fs=fs_select)
+        w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
+        plt.semilogx(w[(0 < w) & (w < fs_select / 2)], -20 * np.log10(np.abs(h[(0 < w) & (w < fs_select / 2)])),
+                     label='sos digital', color='tab:red')
+
+    plt.vlines([fs_select / 2], -5, 90, colors='k', )
+    plt.xlim(octave.f.loc[octave.band_range[0], 'f1'] / 2, octave.f.loc[octave.band_range[1] - 1, 'f2'] * 2)
+    plt.ylim(16.6, -1)
+    plt.grid()
+
+    plt.show()
