@@ -200,7 +200,7 @@ def weighting_filter(curve: str = 'A',
     Parameters
     ----------
     curve: str, optional
-        The name of the weighting curve to be used in this filter. Can be 'A' or 'C'
+        The name of the weighting curve to be used in this filter. Can be 'A' or 'C'.
     analog: bool, optional
         When True, return an analog filter, otherwise a digital filter is returned.
     output: str, optional
@@ -279,7 +279,7 @@ def weighting_filter(curve: str = 'A',
 
 def weigh_signal(signal: list | np.ndarray, fs: int | float | np.number, curve: str = 'A'):
     """
-    Apply signal weighting in the time domain
+    Apply signal weighting in the time domain.
 
     Parameters
     ----------
@@ -304,73 +304,48 @@ if __name__ == '__main__':
     weighting_table = pd.read_csv('weighting_table.csv',
                                   header=0, index_col=0, delimiter=';').replace(np.inf, 1e12)
 
-    plt.figure(1)
-    plt.semilogx(weighting_table.index, a_weighting(weighting_table.index.to_numpy()))
-    plt.errorbar(x=weighting_table.index, y=weighting_table['a'],
-                 yerr=(weighting_table['limit 2-'], weighting_table['limit 2+'], ),
-                 fmt='k.', capsize=2)
+    for weighting in ('a', 'c'):
+        plt.figure(f'{weighting.upper()}-weighting')
+        if weighting == 'a':
+            plt.semilogx(weighting_table.index, a_weighting(weighting_table.index.to_numpy()), 'k', label='reference')
+        elif weighting == 'c':
+            plt.semilogx(weighting_table.index, c_weighting(weighting_table.index.to_numpy()), 'k', label='reference')
 
-    # ba/tf type
-    ba = weighting_filter('a', analog=True, output='ba')
-    w, h = spsig.freqs(*ba)
-    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
-    # zpk type
-    zpk = weighting_filter('a', analog=True, output='zpk')
-    w, h = spsig.freqs_zpk(*zpk)
-    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
+        plt.errorbar(x=weighting_table.index, y=weighting_table[weighting],
+                     yerr=(weighting_table['limit 1-'], weighting_table['limit 1+'], ),
+                     fmt='k.', capsize=3)
+        plt.errorbar(x=weighting_table.index, y=weighting_table[weighting],
+                     yerr=(weighting_table['limit 2-'], weighting_table['limit 2+'], ),
+                     fmt='k.', capsize=1.5, elinewidth=1.)
 
-    # ba/tf digital type
-    ba = weighting_filter('a', output='ba', fs=51.2e3)
-    w, h = spsig.freqz(*ba, fs=51.2e3)
-    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
-    # zpk digital type
-    zpk = weighting_filter('a', output='zpk', fs=51.2e3)
-    w, h = spsig.freqz_zpk(*zpk, fs=51.2e3)
-    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
-    # sos digital type
-    sos = weighting_filter('a', output='sos', fs=51.2e3)
-    w, h = spsig.sosfreqz(sos, fs=51.2e3)
-    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
+        # ba/tf type
+        ba = weighting_filter(weighting, analog=True, output='ba')
+        w, h = spsig.freqs(*ba)
+        plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)), ':', label='ba/tf analog', color='tab:blue')
+        # zpk type
+        zpk = weighting_filter(weighting, analog=True, output='zpk')
+        w, h = spsig.freqs_zpk(*zpk)
+        plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)), ':', label='zpk analog', color='tab:orange')
 
-    plt.ylim(-42, 6)
-    plt.yticks(np.arange(-42, 6 + 6, 6))
-    plt.ylabel('Attenuation (dB)')
-    plt.xlim(10, 25e3)
-    plt.xlabel('f (Hz)')
-    plt.grid()
+        # ba/tf digital type
+        ba = weighting_filter(weighting, output='ba', fs=51.2e3)
+        w, h = spsig.freqz(*ba, fs=51.2e3)
+        plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])), label='ba/tf digital', color='tab:blue')
+        # zpk digital type
+        zpk = weighting_filter(weighting, output='zpk', fs=51.2e3)
+        w, h = spsig.freqz_zpk(*zpk, fs=51.2e3)
+        plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])), label='zpk digital', color='tab:orange')
+        # sos digital type
+        sos = weighting_filter(weighting, output='sos', fs=51.2e3)
+        w, h = spsig.freqz_sos(sos, fs=51.2e3)
+        plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])), label='sos digital', color='tab:red')
 
-    plt.figure(2)
-    plt.semilogx(weighting_table.index, c_weighting(weighting_table.index.to_numpy()))
-    plt.errorbar(x=weighting_table.index, y=weighting_table['c'],
-                 yerr=(weighting_table['limit 1-'], weighting_table['limit 1+'], ),
-                 fmt='k.', capsize=2)
+        plt.legend()
+        plt.ylim(-42, 6)
+        plt.yticks(np.arange(-42, 6 + 6, 6))
+        plt.ylabel('Attenuation (dB)')
+        plt.xlim(10, 25e3)
+        plt.xlabel('f (Hz)')
+        plt.grid()
 
-    # ba/tf type
-    ba = weighting_filter('c', analog=True, output='ba')
-    w, h = spsig.freqs(*ba)
-    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
-    # zpk type
-    zpk = weighting_filter('c', analog=True, output='zpk')
-    w, h = spsig.freqs_zpk(*zpk)
-    plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)))
-
-    # ba/tf digital type
-    ba = weighting_filter('c', output='ba', fs=51.2e3)
-    w, h = spsig.freqz(*ba, fs=51.2e3)
-    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
-    # zpk digital type
-    zpk = weighting_filter('c', output='zpk', fs=51.2e3)
-    w, h = spsig.freqz_zpk(*zpk, fs=51.2e3)
-    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
-    # sos digital type
-    sos = weighting_filter('c', output='sos', fs=51.2e3)
-    w, h = spsig.sosfreqz(sos, fs=51.2e3)
-    plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])))
-
-    plt.ylim(-42, 6)
-    plt.yticks(np.arange(-42, 6 + 6, 6))
-    plt.ylabel('Attenuation (dB)')
-    plt.xlim(10, 25e3)
-    plt.xlabel('f (Hz)')
-    plt.grid()
     plt.show()
