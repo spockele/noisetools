@@ -56,22 +56,22 @@ class OctaveBand:
                  ) -> None:
         if band_range is None:
             if order == 1:
-                band_range = (-9, 5)
+                band_range = (-9, 4)
             elif order == 3:
-                band_range = (-27, 15)
+                band_range = (-27, 14)
             elif order == 6:
-                band_range = (-54, 29)
+                band_range = (-54, 28)
             elif order == 12:
-                band_range = (-108, 57)
+                band_range = (-108, 56)
             else:
                 raise ValueError(f'Default band ranges only defined for orders (1, 3, 6, 12). For order={order}, '
                                  f'define band_range.')
 
-        bands = np.arange(*band_range, )
+        bands = np.arange(band_range[0], band_range[1] + 1)
 
         self.order = order
         self.band_range = (band_range[0], band_range[1] - 1)
-        self.f = pd.DataFrame(index=pd.Index(bands, name='band'), columns=['fl', 'fc', 'fu', 'df'])
+        self.f = pd.DataFrame(index=pd.Index(bands, name='band'), columns=['f1', 'fm', 'f2', 'df'])
 
         self.f.loc[:, 'fm'] = 1e3 * g ** (self.f.index / order)
         self.f.loc[:, 'f1'] = self.f.loc[:, 'fm'] * g ** (-1 / (2 * order))
@@ -286,7 +286,7 @@ if __name__ == '__main__':
             lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
             lti[ltl] = 1 / lti[lth][::-1]
 
-            for band_select in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2][:-1]:
+            for band_select in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2]:
                 lti_band = lti * octave.f.loc[band_select, 'fm']
                 plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
                 plt.plot(lti_band, limit_table['limit 1+'], 'k--')

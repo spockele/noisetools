@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
@@ -22,7 +23,7 @@ from .weighting_functions import weigh_signal
 from .octave_band import OctaveBand
 
 
-__all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'octave_spectrum', 'octave_spectrogram']
+__all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'octave_spectrum', 'octave_spectrogram', 'amplitude_modulation', ]
 
 
 def equivalent_pressure(signal: list | np.ndarray,
@@ -170,9 +171,9 @@ def octave_index(fs: int | float | np.number,
         octave = OctaveBand(order=order)
 
     fs_fltr = octave.f.loc[:, 'f2'] < fs / 2
-    out_index = pd.MultiIndex.from_arrays([octave.f.index[fs_fltr][:-1],
-                                           octave.f.loc[fs_fltr, 'fm'][:-1],
-                                           octave.f.loc[fs_fltr, 'df'][:-1],
+    out_index = pd.MultiIndex.from_arrays([octave.f.index[fs_fltr],
+                                           octave.f.loc[fs_fltr, 'fm'],
+                                           octave.f.loc[fs_fltr, 'df'],
                                            ],
                                           names=['band', 'fm', 'df'])
 
@@ -274,6 +275,57 @@ def octave_spectrogram(signal: list | np.ndarray,
 
 def amplitude_modulation(signal: list | np.ndarray,
                          fs: int | float | np.number,
-                         weighting: str = None,
+                         weighting: str = 'A',
+                         frequency_range: str = 'reference',
                          ) -> None:
-    pass
+    """
+    Implementation of the amplitude modulation algorithm described by Bass et al. [1]_
+
+    Parameters
+    ----------
+    signal: array_like
+        Array with the digital signal.
+    fs: number
+        The sampling frequency of the digital signal.
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
+    frequency_range: str, optional (default = 'reference')
+        Indication of which frequency range from the IOA report to use (see also section 4.3.1 [1]_):
+            - 'low': 50 - 200 Hz
+            - 'reference': 100 - 400 Hz
+            - 'high': 200 - 800 Hz
+
+    Returns
+    -------
+    -
+
+    References
+    ----------
+    .. [1] J. Bass et al., ‘A Method for Rating Amplitude Modulation in Wind Turbine Noise’, Institute of Acoustics,
+        Noise Working Group (Wind Turbine Noise), United Kingdom, Amplitude Modulation Working Group Final Report,
+        Aug. 2016.
+
+
+    """
+    raise NotImplementedError()
+    # TODO: split signal into 10s chuncks for this analysis!
+    band_range = {'low': (-13, -7), 'reference': (-10, -4), 'high': (-7, -1)}[frequency_range.lower()]
+
+    octave = OctaveBand(3, band_range=band_range)
+
+    oct_spectrogram = octave_spectrogram(signal, fs, weighting, delta_t=.1, octave=octave)
+
+    for band_select in oct_spectrogram.index:
+        spl_t = oct_spectrogram.columns.copy()
+        spl_sig = oct_spectrogram.loc[band_select, :].to_numpy()
+
+        pp3 = np.polynomial.Polynomial.fit(spl_t, spl_sig, deg=3)
+
+        spl_sig_det = spl_sig - pp3(spl_t)
+
+        fft_f = np.fft.rfftfreq(spl_sig.size, .1)
+        spl_fft = np.fft.rfft(spl_sig_det, )
+
+        plt.plot(fft_f, np.abs(spl_fft) / (100**2))
+
+    plt.show()
