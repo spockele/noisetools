@@ -47,7 +47,7 @@ class OctaveBand:
     References
     ----------
     .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Octave-band and fractional-octave-band
-        filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2013, Feb. 2014.
+        filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2014, Feb. 2014.
 
     """
     def __init__(self,
@@ -71,12 +71,12 @@ class OctaveBand:
 
         self.order = order
         self.band_range = (band_range[0], band_range[1] - 1)
-        self.f = pd.DataFrame(index=pd.Index(bands, name='band nr.'), columns=['fl', 'fc', 'fu', 'df'])
+        self.f = pd.DataFrame(index=pd.Index(bands, name='band'), columns=['fl', 'fc', 'fu', 'df'])
 
         self.f.loc[:, 'fm'] = 1e3 * g ** (self.f.index / order)
         self.f.loc[:, 'f1'] = self.f.loc[:, 'fm'] * g ** (-1 / (2 * order))
         self.f.loc[:, 'f2'] = self.f.loc[:, 'fm'] * g ** (1 / (2 * order))
-        self.f.loc[:, 'df'] = self.f.loc[:, 'fu'] - self.f.loc[:, 'fl']
+        self.f.loc[:, 'df'] = self.f.loc[:, 'f2'] - self.f.loc[:, 'f1']
 
     def f_to_band(self,
                   f: np.ndarray | Iterable,
@@ -228,56 +228,86 @@ class OctaveBand:
 
         Notes
         -----
-        This filter complies with the class 1 limits of IEC 61260-1:2013, Table 1 [1]_.
+        This filter complies with the class 1 limits of IEC 61260-1:2014, Table 1 [1]_.
 
         References
         ----------
         .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Octave-band and fractional-octave-band
-            filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2013, Feb. 2014.
+            filters - Part 1: Specifications’, Geneva, Switzerland, International Standard IEC 61260-1:2014, Feb. 2014.
 
         """
         f1, f2, fm = self.f.loc[band, ['f1', 'f2', 'fm']]
 
+        # Set the bandstop limiting frequencies at G^1 edges.
         f2_bs = 1 + (g ** (1 / (2 * self.order)) - 1) / (g ** .5 - 1) * (g ** 1 - 1)
         f1_bs = 1 / f2_bs
-
+        # Obtain the filter order and critical frequencies for a Butterworth bandpass filter that complies with IEC.
         order, wn = spsig.buttord([f1, f2], [fm * f1_bs, fm * f2_bs], 2., 70, fs=fs)
-
+        # Return the requested Butterworth filter.
         return spsig.butter(order, wn, btype='bandpass', analog=analog, output=output, fs=fs)
+
+    def filter_signal(self,
+                      signal: list | np.ndarray,
+                      fs: int | float | np.number,
+                      band: int,
+                      ) -> np.ndarray:
+        """
+        Apply band filter in the time domain.
+
+        Parameters
+        ----------
+        signal: array_like
+            Array with the digital signal.
+        fs: float
+            The sampling frequency of the digital signal.
+        band: int
+            Band number to design the band filter for.
+            NOTE: Only usable for bands with f2 below the sampling frequency.
+
+        """
+        band_sos = self.band_filter(band, output='sos', fs=fs)
+        return spsig.sosfilt(band_sos, signal)
 
 
 if __name__ == '__main__':
-    fs_select = 51.2e3
-    octave_select = 1
-    octave = OctaveBand(octave_select)
+    for fs_select in (44.1e3, 48.0e3, 51.2e3):
+        limit_table = pd.read_csv('octave_band_limits.csv', index_col=0)
+        plot_limit = (-1 <= limit_table.index) & (limit_table.index <= 1)
 
-    limit_table = pd.read_csv('octave_band_limits.csv', index_col=0)
-    plot_limit = (-1 <= limit_table.index) & (limit_table.index <= 1)
-    lti = limit_table.index.to_numpy()
-    lth = lti > 0
-    ltl = lti < 0
+        lth = limit_table.index.to_numpy() > 0
+        ltl = limit_table.index.to_numpy() < 0
 
-    lti[lti == 0] = 1.
-    lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
-    lti[ltl] = 1 / lti[lth][::-1]
+        for octave_select in (1, 3, 6, 12):
+            plt.figure(f'1/{octave_select} octave band, fs={int(fs_select)} Hz', figsize=(16, 4))
+            octave = OctaveBand(octave_select)
 
-    for band_select in octave.f.index[:-1]:
-        lti_band = lti * octave.f.loc[band_select, 'fm']
-        plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
-        plt.plot(lti_band, limit_table['limit 1+'], 'k--')
+            lti = limit_table.index.to_numpy(copy=True)
+            lti[lti == 0] = 1.
+            lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
+            lti[ltl] = 1 / lti[lth][::-1]
 
-        # plt.vlines([fm, ], -5, 90, colors='0.75', linestyles='--')
-        plt.vlines(octave.f.loc[band_select, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
+            for band_select in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2][:-1]:
+                lti_band = lti * octave.f.loc[band_select, 'fm']
+                plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
+                plt.plot(lti_band, limit_table['limit 1+'], 'k--')
 
-        # sos digital type
-        sos = octave.band_filter(band_select, analog=False, output='sos', fs=fs_select)
-        w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
-        plt.semilogx(w[(0 < w) & (w < fs_select / 2)], -20 * np.log10(np.abs(h[(0 < w) & (w < fs_select / 2)])),
-                     label='sos digital', color='tab:red')
+                # plt.vlines([fm, ], -5, 90, colors='0.75', linestyles='--')
+                plt.vlines(octave.f.loc[band_select, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
 
-    plt.vlines([fs_select / 2], -5, 90, colors='k', )
-    plt.xlim(octave.f.loc[octave.band_range[0], 'f1'] / 2, octave.f.loc[octave.band_range[1] - 1, 'f2'] * 2)
-    plt.ylim(16.6, -1)
-    plt.grid()
+                # sos digital type
+                sos = octave.band_filter(band_select, analog=False, output='sos', fs=fs_select)
+                w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
+                plt.semilogx(w[(0 < w) & (w < fs_select / 2)], -20 * np.log10(np.abs(h[(0 < w) & (w < fs_select / 2)])),
+                             label='sos digital', color='tab:red')
+
+            plt.vlines([fs_select / 2], -5, 90, colors='k', )
+            plt.xlim(octave.f.loc[octave.band_range[0], 'f1'] / 1.1, 1.1 * fs_select / 2)
+            plt.ylim(20, -1)
+
+            plt.xlabel('Frequency (Hz)')
+            plt.ylabel('Octave band filter attenuation (dB)')
+
+            plt.subplots_adjust(.05, .125, .99, .99)
+            plt.grid()
 
     plt.show()
