@@ -277,7 +277,10 @@ def weighting_filter(curve: str = 'A',
         raise ValueError(f'{output} is not a valid output form.')
 
 
-def weigh_signal(signal: list | np.ndarray, fs: int | float | np.number, curve: str = 'A'):
+def weigh_signal(signal: list | np.ndarray,
+                 fs: int | float | np.number,
+                 curve: str = 'A'
+                 ):
     """
     Apply signal weighting in the time domain.
 
@@ -286,7 +289,7 @@ def weigh_signal(signal: list | np.ndarray, fs: int | float | np.number, curve: 
     signal: array_like
         Array with the digital signal.
     fs: float
-        The sampling frequency of the digital signal
+        The sampling frequency of the digital signal.
     curve: str, optional
         The name of the weighting curve to be used in this filter. Can be 'A' or 'C'
     """
@@ -318,29 +321,11 @@ if __name__ == '__main__':
                      yerr=(weighting_table['limit 2-'], weighting_table['limit 2+'], ),
                      fmt='k.', capsize=1.5, elinewidth=1.)
 
-        # ba/tf type
-        ba = weighting_filter(weighting, analog=True, output='ba')
-        w, h = spsig.freqs(*ba)
-        plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)), ':', label='ba/tf analog', color='tab:blue')
-        # zpk type
-        zpk = weighting_filter(weighting, analog=True, output='zpk')
-        w, h = spsig.freqs_zpk(*zpk)
-        plt.semilogx(w / (2 * np.pi), 20 * np.log10(np.abs(h)), ':', label='zpk analog', color='tab:orange')
-
-        # ba/tf digital type
-        ba = weighting_filter(weighting, output='ba', fs=51.2e3)
-        w, h = spsig.freqz(*ba, fs=51.2e3)
-        plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])), label='ba/tf digital', color='tab:blue')
-        # zpk digital type
-        zpk = weighting_filter(weighting, output='zpk', fs=51.2e3)
-        w, h = spsig.freqz_zpk(*zpk, fs=51.2e3)
-        plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])), label='zpk digital', color='tab:orange')
         # sos digital type
         sos = weighting_filter(weighting, output='sos', fs=51.2e3)
         w, h = spsig.freqz_sos(sos, fs=51.2e3)
         plt.semilogx(w[w > 0], 20 * np.log10(np.abs(h[w > 0])), label='sos digital', color='tab:red')
 
-        plt.legend()
         plt.ylim(-42, 6)
         plt.yticks(np.arange(-42, 6 + 6, 6))
         plt.ylabel('Attenuation (dB)')

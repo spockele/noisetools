@@ -11,8 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```numbered_columns``` optional parameter in ```hawc2.read_hawc2_res()``` to replicate old column name behaviour.
 - ```OctaveBand``` class in ```octave_band``` module:
   - A class 1 IEC 61260-1:2013 compliant octave band filter design function.
+- ```sound_levels``` module:
+  - ```octave_spectrum``` function to calculate an average SPL spectrum in octave bands, of a signal .
+  - ```octave_spectrogram``` function to calculate SPL over time in octave bands, of a signal.
 
-[//]: # (### Changed)
+### Changed
+- ```OctaveBand``` class in ```octave_band``` module:
+  - Changed the column names of the frequencies in self.f to match the IEC standard.
 
 [//]: # (### Deprecated)
 
