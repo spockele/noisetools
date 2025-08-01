@@ -15,14 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from matplotlib.colors import TABLEAU_COLORS
 import matplotlib.pyplot as plt
+import scipy.signal as spsig
 import pandas as pd
 import numpy as np
 
 from .weighting_functions import weigh_signal
 from .octave_band import OctaveBand
 
-
+tableau = list(TABLEAU_COLORS.keys())
 __all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'octave_spectrum', 'octave_spectrogram', 'amplitude_modulation', ]
 
 
@@ -275,9 +277,11 @@ def octave_spectrogram(signal: list | np.ndarray,
 
 def amplitude_modulation(signal: list | np.ndarray,
                          fs: int | float | np.number,
+                         expected_bpf: tuple[int | float | np.number, int | float | np.number],
                          weighting: str = 'A',
                          frequency_range: str = 'reference',
-                         ) -> None:
+                         verbose: bool = False,
+                         ) -> pd.Series:
     """
     Implementation of the amplitude modulation algorithm described by Bass et al. [1]_
 
@@ -287,6 +291,8 @@ def amplitude_modulation(signal: list | np.ndarray,
         Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
+    expected_bpf: tuple[number, number]
+        Range of frequencies between which the blade-pass frequency of the wind turbine is expected (Hz).
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     frequency_range: str, optional (default = 'reference')
@@ -294,10 +300,13 @@ def amplitude_modulation(signal: list | np.ndarray,
             - 'low': 50 - 200 Hz
             - 'reference': 100 - 400 Hz
             - 'high': 200 - 800 Hz
+    verbose: bool, optional
+        Turn on print statements about the detection/acceptance of the BPF and harmonics.
+        Also turns on plotting of the detrended SPL(t) and filtered SPL(t).
 
     Returns
     -------
-    -
+    A pandas Series with the amplitude modulation in dB, every 10s (in accordance with Bass et al. [1]_).
 
     References
     ----------
@@ -305,27 +314,154 @@ def amplitude_modulation(signal: list | np.ndarray,
         Noise Working Group (Wind Turbine Noise), United Kingdom, Amplitude Modulation Working Group Final Report,
         Aug. 2016.
 
-
     """
-    raise NotImplementedError()
-    # TODO: split signal into 10s chuncks for this analysis!
+    # The relevant bands for the selected range of frequency.
     band_range = {'low': (-13, -7), 'reference': (-10, -4), 'high': (-7, -1)}[frequency_range.lower()]
 
+    # 0) Calculate the 1/3 octave band spectrogram with timestep 100ms.
     octave = OctaveBand(3, band_range=band_range)
-
     oct_spectrogram = octave_spectrogram(signal, fs, weighting, delta_t=.1, octave=octave)
 
-    for band_select in oct_spectrogram.index:
-        spl_t = oct_spectrogram.columns.copy()
-        spl_sig = oct_spectrogram.loc[band_select, :].to_numpy()
+    plt.figure('Amplitude modulation')
+    # Define the FFT frequencies of the FFT{SPL(t)}.
+    fft_f = np.fft.rfftfreq(100, .1)
+    # Create empty pandas Series to store the resulting modulation depths.
+    modulation_depth = pd.Series()
+    modulation_depth.index.name = 'Time (s)'
 
+    ii = 0
+    while ii + 100 <= oct_spectrogram.columns.size:
+        # Gather a 10-second interval from the full signal spectrogram.
+        oct_spectrogram_select = oct_spectrogram.iloc[:, ii:ii+100]
+        # Sum logarithmically over the frequency bands to obtain one SPL(t) signal.
+        spl_sig = 20 * np.log10(np.sum(10 ** (oct_spectrogram_select.to_numpy() / 20), axis=0))
+        spl_t = oct_spectrogram_select.columns.copy()
+
+        # 1) Detrend with a 3rd order polynomial.
         pp3 = np.polynomial.Polynomial.fit(spl_t, spl_sig, deg=3)
-
         spl_sig_det = spl_sig - pp3(spl_t)
 
-        fft_f = np.fft.rfftfreq(spl_sig.size, .1)
+        plt.plot(spl_t, spl_sig_det, color=tableau[ii//100], linewidth=.5)
+
+        # 2) Calculate the FFT of the detrended SPL(t).
         spl_fft = np.fft.rfft(spl_sig_det, )
 
-        plt.plot(fft_f, np.abs(spl_fft) / (100**2))
+        # 3) Calculate the spectral density.
+        spl_spectrum = np.abs(spl_fft) / (100**2)
+        # 4) Step 1: Find peak frequencies of SPL(f).
+        spl_peak_idx, _ = spsig.find_peaks(spl_spectrum, threshold=np.std(spl_spectrum))
 
-    plt.show()
+        # Already calculate all local maxima for 6).
+        spl_local_max = spsig.argrelmax(spl_spectrum)[0]
+
+        # 7a) Create an array of zeroes to store the FFT for inversion.
+        reconstruct_fft = np.zeros(spl_fft.shape, dtype=complex)
+
+        found_bpf = False
+
+        for peak_idx in spl_peak_idx:
+            # 4) Step 2: Find a peak inside the given expected range of the BPF.
+            if expected_bpf[0] <= fft_f[peak_idx] and fft_f[peak_idx] <= expected_bpf[1]:
+                found_bpf = True
+
+                # 5) Calculate the prominence of the peak and check if it is >= 4..
+                level_peak = spl_spectrum[peak_idx]
+                side_idx = [peak_idx - 3, peak_idx - 2, peak_idx + 2, peak_idx + 3]
+                level_side = sum(spl_spectrum[side_idx]) / 4
+
+                if level_peak / level_side >= 4:
+                    if verbose:
+                        print(f'BPF prominent!')
+
+                    # 7b) Add the BPF peak to the reconstruction FFT
+                    reconstruct_fft[peak_idx - 1:peak_idx + 2] = spl_fft[peak_idx - 1:peak_idx + 2]
+
+                    # Loop over the possible harmonics.
+                    for harmonic in (2, 3):
+                        # 6a) Set the index of the harmonic.
+                        harmonic_idx = harmonic * peak_idx
+                        harmonic_fft = np.zeros(fft_f.size, dtype=complex)
+
+                        # 6b) Determine if harmonic is local maximum.
+                        if harmonic_idx in spl_local_max:
+                            if verbose:
+                                print(f'\tHarmonic {harmonic - 1} is local max!')
+
+                            # 6c,i) Generate time-series from harmonic.
+                            harmonic_fft[harmonic_idx - 1:harmonic_idx + 2] = spl_fft[harmonic_idx - 1:harmonic_idx + 2]
+                            harmonic_sig = np.fft.irfft(harmonic_fft)
+
+                            # 6c,ii) Check if harmonic peak-to-peak amplitude is >= 1.5 dB.
+                            if np.max(harmonic_sig) - np.min(harmonic_sig) >= 1.5:
+                                if verbose:
+                                    print(f'\t > Harmonic {harmonic - 1} accepted!')
+                                # 7c) Add harmonic to the reconstruction FFT.
+                                reconstruct_fft[harmonic_idx - 1:harmonic_idx + 2] = spl_fft[harmonic_idx - 1:harmonic_idx + 2]
+                            elif verbose:
+                                # 6d) Reject harmonic if not all conditions are met.
+                                print(f'\t > Harmonic {harmonic - 1} rejected...')
+
+                        # 6b,bis) Determine if lines next to harmonic are local maxima.
+                        else:
+                            # Initialisers for the loop.
+                            harmonic_mag = 0
+                            n_accept = None
+
+                            # Go over allowable N.
+                            for n in range(-(harmonic-1), harmonic):
+                                n_idx = harmonic_idx + n
+                                # Check if this step next to the harmonic is a local maximum,
+                                #  and if it is larger than a previously detected local maximum.
+                                if n and (n_idx in spl_local_max and spl_spectrum[n_idx] > harmonic_mag):
+                                    n_accept = n
+
+                            if n_accept is not None:
+                                if verbose:
+                                    print(f'\t Harmonic {harmonic - 1} (step {n_accept}) is local max!')
+                                n_idx = harmonic_idx + n_accept
+
+                                # 6c,i) Generate time-series from shifted harmonic.
+                                harmonic_fft[n_idx - 1:n_idx + 2] = spl_fft[n_idx - 1:n_idx + 2]
+                                harmonic_sig = np.fft.irfft(harmonic_fft)
+
+                                # 6c,ii) Check if harmonic peak-to-peak amplitude is >= 1.5 dB.
+                                if np.max(harmonic_sig) - np.min(harmonic_sig) >= 1.5:
+                                    if verbose:
+                                        print(f'\t > Harmonic {harmonic - 1} accepted!')
+                                    # 7c) Add harmonic to the reconstruction FFT.
+                                    reconstruct_fft[n_idx - 1:n_idx + 2] = spl_fft[n_idx - 1:n_idx + 2]
+                                elif verbose:
+                                    # 6d) Reject harmonic if not all conditions are met.
+                                    print(f'\t > Harmonic {harmonic - 1} rejected...')
+
+                    # Once the BPF is found, no more peaks should be explored.
+                    continue
+
+                # 5,bis) In case prominence < 4:
+                elif verbose:
+                    print('BPF not prominent...')
+
+        # 4,bis) The BPF is not detected in the expected range.
+        if not found_bpf and verbose:
+            print('BPF not found...')
+
+        # 7d) Inverse FFT of the newly constructed array.
+        spl_reconstruct = np.fft.irfft(reconstruct_fft, )
+
+        # 8) Resulting signal.
+        plt.plot(spl_t, spl_reconstruct, color=tableau[ii//100])
+
+        # 9) Determine the modulation depth.
+        l5, l95 = np.percentile(spl_reconstruct, [5, 95])
+        modulation_depth.loc[ii // 10] = abs(l95 - l5)
+
+        ii += 100
+
+    if verbose:
+        print(modulation_depth)
+        plt.ylim(-5, 5)
+        plt.show()
+    else:
+        plt.close('Amplitude modulation')
+
+    return modulation_depth

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```sound_levels``` module:
   - ```octave_spectrum``` function to calculate an average SPL spectrum in octave bands, of a signal .
   - ```octave_spectrogram``` function to calculate SPL over time in octave bands, of a signal.
+  - ```amplitude_modulation``` function to calculate the amplitude modulation depth, with the method by Bass et al. (2016).
 
 ### Changed
 - ```OctaveBand``` class in ```octave_band``` module:
