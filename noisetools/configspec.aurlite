@@ -28,5 +28,6 @@
         pos = float_list(min=3, max=3)
 
 [reconstruction]
+	mech = option('All', 'TI', 'TE', 'ST', 'TP', 'Full', default='All')
     fs = integer(min=0, default=48000)
     overlap = integer(min=2, default=3)
