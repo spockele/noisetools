@@ -279,7 +279,7 @@ def amplitude_modulation(signal: list | np.ndarray,
                          fs: int | float | np.number,
                          expected_bpf: tuple[int | float | np.number, int | float | np.number],
                          weighting: str = 'A',
-                         frequency_range: str = 'reference',
+                         frequency_range: str | int = 'reference',
                          verbose: bool = False,
                          ) -> pd.Series:
     """
@@ -295,11 +295,12 @@ def amplitude_modulation(signal: list | np.ndarray,
         Range of frequencies between which the blade-pass frequency of the wind turbine is expected (Hz).
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    frequency_range: str, optional (default = 'reference')
+    frequency_range: str | int, optional (default = 'reference')
         Indication of which frequency range from the IOA report to use (see also section 4.3.1 [1]_):
             - 'low': 50 - 200 Hz
             - 'reference': 100 - 400 Hz
             - 'high': 200 - 800 Hz
+        An integer can be used to calculate the amplitude modulation in a single octave band.
     verbose: bool, optional
         Turn on print statements about the detection/acceptance of the BPF and harmonics.
         Also turns on plotting of the detrended SPL(t) and filtered SPL(t).
@@ -315,8 +316,11 @@ def amplitude_modulation(signal: list | np.ndarray,
         Aug. 2016.
 
     """
-    # The relevant bands for the selected range of frequency.
-    band_range = {'low': (-13, -7), 'reference': (-10, -4), 'high': (-7, -1)}[frequency_range.lower()]
+    if isinstance(frequency_range, str):
+        # The relevant bands for the selected range of frequency.
+        band_range = {'low': (-13, -7), 'reference': (-10, -4), 'high': (-7, -1)}[frequency_range.lower()]
+    else:
+        band_range = (frequency_range, frequency_range)
 
     # 0) Calculate the 1/3 octave band spectrogram with timestep 100ms.
     octave = OctaveBand(3, band_range=band_range)
@@ -465,3 +469,52 @@ def amplitude_modulation(signal: list | np.ndarray,
         plt.close('Amplitude modulation')
 
     return modulation_depth
+
+
+def octave_am_spectrum(signal: list | np.ndarray,
+                       fs: int | float | np.number,
+                       expected_bpf: tuple[int | float | np.number, int | float | np.number],
+                       weighting: str = None,
+                       verbose: bool = False,
+                       ) -> pd.DataFrame:
+    """
+    1/3 Octave band spectrum of the amplitude modulation, based on the method by Bass et al. [1]_
+
+    Parameters
+    ----------
+    signal: array_like
+        Array with the digital signal.
+    fs: number
+        The sampling frequency of the digital signal.
+    expected_bpf: tuple[number, number]
+        Range of frequencies between which the blade-pass frequency of the wind turbine is expected (Hz).
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
+    verbose: bool, optional
+        Turn on print statements about the detection/acceptance of the BPF and harmonics.
+        Also turns on plotting of the detrended SPL(t) and filtered SPL(t).
+
+    Returns
+    -------
+    A pandas DataFrame with the amplitude modulation in dB, every 10s (in accordance with Bass et al. [1]_).
+
+    References
+    ----------
+    .. [1] J. Bass et al., ‘A Method for Rating Amplitude Modulation in Wind Turbine Noise’, Institute of Acoustics,
+        Noise Working Group (Wind Turbine Noise), United Kingdom, Amplitude Modulation Working Group Final Report,
+        Aug. 2016.
+
+    """
+    octave = OctaveBand(3, band_range=(-17, 12))
+
+    am_spectrum = []
+
+    for band_select in octave.f.index:
+        am_series = amplitude_modulation(signal, fs, expected_bpf, weighting,
+                                         frequency_range=band_select, verbose=verbose)
+        am_spectrum.append(am_series)
+
+    am_spectrum = pd.concat(am_spectrum, axis='columns').T
+    am_spectrum.index = octave_index(fs, octave)[0]
+
+    return am_spectrum
