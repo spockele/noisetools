@@ -52,8 +52,6 @@ The primary component of this repository is the *noisetools* package. Wheels and
 ### pySQAT
 Translation layer to run SQAT in Python. This sub-package includes a licensed copy of SQAT v1.2 [[3](#greco2023)].
 
-Currently only supports the following SQMs: 
-
 IMPORTANT: to use pySQAT, and the required [matlabengine](https://pypi.org/project/matlabengine/) package, an activated installation of [MATLAB](https://www.mathworks.com/products/matlab.html) is required.\
 The authors recommend manually installing the matlabengine version compatible with your MATLAB and Python versions. See the [PyPI: matlabengine version history](https://pypi.org/project/matlabengine/#history) for more information about compatibility of the releases.
 
