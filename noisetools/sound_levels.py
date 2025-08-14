@@ -25,7 +25,9 @@ from .weighting_functions import weigh_signal
 from .octave_band import OctaveBand
 
 tableau = list(TABLEAU_COLORS.keys())
-__all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'octave_spectrum', 'octave_spectrogram', 'amplitude_modulation', ]
+__all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'ospl_t_out',
+           'octave_spectrum', 'octave_spectrogram',
+           'amplitude_modulation', 'octave_am_spectrum', ]
 
 
 def equivalent_pressure(signal: list | np.ndarray,
@@ -91,12 +93,46 @@ def ospl(signal: list | np.ndarray,
     return 10 * np.log10(pe2 / (2e-5 ** 2))
 
 
+def ospl_t_out(signal_size: int,
+               fs: int | float | np.number,
+               delta_t: float | np.number = 1.,
+               complete: bool = True,
+               ) -> np.ndarray:
+    """
+    Calculate the matching time series for the ospl_t function.
+
+    Parameters
+    ----------
+    signal_size: int
+        Array with the digital signal.
+    fs: number
+        The sampling frequency of the digital signal.
+    delta_t: float | np.number, optional (default=1.)
+        Desired timestep in the OSPL output, in seconds.
+    complete: bool, optional (default=True)
+        In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
+        calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
+        in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
+
+    Returns
+    -------
+    Time (seconds) at which the OSPL is calculated. Determined as the central timestamp
+        in the sections of length delta_t.
+    """
+    if complete:
+        t_out = np.arange(0, signal_size / fs, delta_t)
+    else:
+        t_out = np.arange(0, np.floor(signal_size / fs), delta_t)
+
+    return t_out + delta_t / 2
+
+
 def ospl_t(signal: list | np.ndarray,
            fs: int | float | np.number,
            weighting: str = None,
-           t: list | np.ndarray = None,
            delta_t: float | np.number = 1.,
-           ) -> tuple[np.ndarray, np.ndarray]:
+           complete: bool = True,
+           ) -> np.ndarray:
     """
     Calculate the OSPL over time, of a digital signal.
 
@@ -108,40 +144,42 @@ def ospl_t(signal: list | np.ndarray,
         The sampling frequency of the digital signal.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    t: list | np.ndarray, optional
-        Optional input of the time series of the signal.
     delta_t: float | np.number, optional (default=1.)
         Desired timestep in the OSPL output, in seconds.
+    complete: bool, optional (default=True)
+        In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
+        calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
+        in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
 
     Returns
     -------
-    Two arrays:
-        - Time (seconds) at which the OSPL is calculated. Determined as the central timestamp in the
-            sections of length delta_t.
-        - OPSL (dB) (weighted to selected weighting) at the timestamps defined in the time array.
+    OPSL (dB) (weighted to selected weighting) at the timestamps defined by delta_t.
 
     """
-    # Convert signal to numpy array
+    # Convert signal to numpy array.
     if not isinstance(signal, np.ndarray):
         signal = np.array(signal)
 
-    # Ensure the time series is correct.
-    if t is not None and not isinstance(t, np.ndarray):
-        t = np.array(t)
-    elif t is None:
-        t = np.linspace(0, signal.size / fs, signal.size)
-    if t.size != signal.size:
-        raise ValueError(f'Shape mismatch: t and signal should have the same length: {t.size} != {signal.size}')
+    # Weight the full signal beforehand.
+    if weighting is not None:
+        signal = weigh_signal(signal, fs, weighting)
 
-    t_out = np.arange(t[0], t[-1], delta_t)
-    ospl_out = np.zeros(t_out.size)
+    # Determine the timestep length in terms of samples.
+    step = int(delta_t * fs)
+    # Determine the number of timesteps to compute.
+    n_step = signal.size / step
+    if complete and int(n_step) < n_step:
+            n_step = int(n_step) + 1
+    else:
+        n_step = int(n_step)
 
-    for ti, t0 in enumerate(t_out):
-        select = (t0 <= t) & (t < t0 + delta_t)
+    # Initialise the output array.
+    ospl_out = np.zeros(n_step)
+    # Compute the OSPL per timestep using the ospl function. Note that weighting was done beforehand.
+    for ti in range(n_step):
+        ospl_out[ti] = ospl(signal[(ti * step):((ti + 1) * step)], fs, weighting=None)
 
-        ospl_out[ti] = ospl(signal[select], fs, weighting=weighting)
-
-    return t_out + delta_t / 2, ospl_out
+    return ospl_out
 
 
 def octave_index(fs: int | float | np.number,
@@ -228,7 +266,6 @@ def octave_spectrum(signal: list | np.ndarray,
 def octave_spectrogram(signal: list | np.ndarray,
                        fs: int | float | np.number,
                        weighting: str = None,
-                       t: list | np.ndarray = None,
                        delta_t: float | np.number = 1.,
                        octave: OctaveBand = None,
                        order: int = 3,
@@ -244,8 +281,6 @@ def octave_spectrogram(signal: list | np.ndarray,
         The sampling frequency of the digital signal.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    t: list | np.ndarray, optional
-        Optional input of the time series of the signal.
     delta_t: float | np.number, optional (default=1.)
         Desired timestep in the OSPL output, in seconds.
     octave: OctaveBand, optional
@@ -265,12 +300,12 @@ def octave_spectrogram(signal: list | np.ndarray,
     """
     out_index, octave = octave_index(fs, octave, order)
 
-    out_t, _ = ospl_t(signal, fs, weighting, t, delta_t)
+    out_t = ospl_t_out(signal.size, fs, delta_t, complete=True)
     out_spectrogram = pd.DataFrame(index=out_index, columns=out_t, dtype=float)
 
     for band_select in out_index.get_level_values('band'):
         band_signal = octave.filter_signal(signal, fs, band_select)
-        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, weighting, t, delta_t)[1]
+        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, weighting, delta_t, complete=True)
 
     return out_spectrogram
 
@@ -323,8 +358,8 @@ def amplitude_modulation(signal: list | np.ndarray,
         band_range = (frequency_range, frequency_range)
 
     # 0) Calculate the 1/3 octave band spectrogram with timestep 100ms.
-    octave = OctaveBand(3, band_range=band_range)
-    oct_spectrogram = octave_spectrogram(signal, fs, weighting, delta_t=.1, octave=octave)
+    octave = OctaveBand(3, band_range)
+    oct_spectrogram = octave_spectrogram(signal, fs, weighting, .1, octave)
 
     plt.figure('Amplitude modulation')
     # Define the FFT frequencies of the FFT{SPL(t)}.
