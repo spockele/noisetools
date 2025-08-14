@@ -242,7 +242,7 @@ class OctaveBand:
         f2_bs = 1 + (g ** (1 / (2 * self.order)) - 1) / (g ** .5 - 1) * (g ** 1 - 1)
         f1_bs = 1 / f2_bs
         # Obtain the filter order and critical frequencies for a Butterworth bandpass filter that complies with IEC.
-        order, wn = spsig.buttord([f1, f2], [fm * f1_bs, fm * f2_bs], 2., 70, fs=fs)
+        order, wn = spsig.buttord([f1, f2], [fm * f1_bs, min(fm * f2_bs, fs/2)], 2., 70, fs=fs)
         # Return the requested Butterworth filter.
         return spsig.butter(order, wn, btype='bandpass', analog=analog, output=output, fs=fs)
 
@@ -271,7 +271,7 @@ class OctaveBand:
 
 if __name__ == '__main__':
     for fs_select in (44.1e3, 48.0e3, 51.2e3):
-        limit_table = pd.read_csv('octave_band_limits.csv', index_col=0)
+        limit_table = pd.read_csv('noisetools/octave_band_limits.csv', index_col=0)
         plot_limit = (-1 <= limit_table.index) & (limit_table.index <= 1)
 
         lth = limit_table.index.to_numpy() > 0
