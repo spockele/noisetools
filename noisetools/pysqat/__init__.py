@@ -505,6 +505,7 @@ class PySQAT:
                           dbfs: int | float = 94.,
                           time_skip: int | float = 0.,
                           loudness_field: int | float = 0.,
+                          overwrite: bool = False,
                           ) -> None:
         """
         Process all wav files in the given directory, using one of the psychoacoustic annoyance functions in SQAT.
@@ -533,6 +534,9 @@ class PySQAT:
             more info.
             NOTE: value should be convertible to an integer.
 
+        overwrite: boolean, optional
+            Indicates whether to overwrite existing csv files in the target directory.
+
         """
         metrics = {'psychoacoustic_annoyance_zwicker1999': 'PA',
                    'psychoacoustic_annoyance_di2016': 'PA',
@@ -545,10 +549,12 @@ class PySQAT:
             if fname.endswith('.wav'):
                 fpath = os.path.join(path, fname)
                 print(fpath)
-                sqm_res = sqm_func(fpath, dbfs, time_skip, loudness_field)
-
-                sqm_df = self.extract_instantaneous_sqm(sqm_res, metrics[sqm])
-                sqm_df.to_csv(fpath.replace('.wav', f'_{metrics[sqm]}.csv'))
+                if overwrite or not os.path.isfile(fpath.replace('.wav', f'_{metrics[sqm]}.csv')):
+                    sqm_res = sqm_func(fpath, dbfs, time_skip, loudness_field)
+                    sqm_df = self.extract_instantaneous_sqm(sqm_res, metrics[sqm])
+                    sqm_df.to_csv(fpath.replace('.wav', f'_{metrics[sqm]}.csv'))
+                else:
+                    print('\t -> Skipped')
 
     def process_directory_pa(self,
                              path: str,
@@ -556,6 +562,7 @@ class PySQAT:
                              dbfs: int | float = 94.,
                              time_skip: int | float = 0.,
                              loudness_field: int | float = 0.,
+                             overwrite: bool = False,
                              ) -> None:
         """
         Process all wav files in the given directory, using one of the psychoacoustic annoyance functions in SQAT.
@@ -583,6 +590,9 @@ class PySQAT:
             more info.
             NOTE: value should be convertible to an integer.
 
+        overwrite: boolean, optional
+            Indicates whether to overwrite existing csv files in the target directory.
+
         """
         pa_func = getattr(self, f'psychoacoustic_annoyance_{notation}')
 
@@ -590,9 +600,12 @@ class PySQAT:
             if fname.endswith('.wav'):
                 fpath = os.path.join(path, fname)
                 print(fpath)
-                pa_res = pa_func(fpath, dbfs, time_skip, loudness_field)
-                pa_df = self.extract_instantaneous_sqms(pa_res)
-                pa_df.to_csv(fpath.replace('.wav', '.csv'))
+                if overwrite or not os.path.isfile(fpath.replace('.wav', '.csv')):
+                    pa_res = pa_func(fpath, dbfs, time_skip, loudness_field)
+                    pa_df = self.extract_instantaneous_sqms(pa_res)
+                    pa_df.to_csv(fpath.replace('.wav', '.csv'))
+                else:
+                    print('\t -> Skipped')
 
 
 def loudness_to_loudnesslevel(loudness: np.ndarray):

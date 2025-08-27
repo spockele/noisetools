@@ -30,13 +30,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ```numbered_columns``` optional parameter in ```read_hawc2_res()``` to replicate old column name behaviour.
 
 
+- ```PySQAT``` sub-package:
+  - Added the optional ```overwrite``` variable to the ```process_directory``` functions, so it doesn't do double work after an interruption.
+
+
 ### Changed
 - ```OctaveBand``` class in ```octave_band``` module:
   - Changed the column names of the frequencies in self.f to match the IEC standard.
+
+
 - ```ospl_t``` function in ```sound_levels``` module:
   - Changed the method for splitting in timesteps. This has significantly improved compute times for this function.
   - **The variable ```t``` has been removed!!**
   - **The function no longer returns the time output!!** This has been separated into a new function ```ospl_t_out``` (see the **Added** section)
+
 
 [//]: # (### Deprecated)
 
