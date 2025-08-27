@@ -304,7 +304,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    weighting_table = pd.read_csv('weighting_table.csv',
+    weighting_table = pd.read_csv('noisetools/weighting_table.csv',
                                   header=0, index_col=0, delimiter=';').replace(np.inf, 1e12)
 
     for weighting in ('a', 'c'):
