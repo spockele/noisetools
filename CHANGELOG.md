@@ -8,17 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- ```numbered_columns``` optional parameter in ```hawc2.read_hawc2_res()``` to replicate old column name behaviour.
 - ```OctaveBand``` class in ```octave_band``` module:
   - A class 1 IEC 61260-1:2013 compliant octave band filter design function.
+  
+
 - ```sound_levels``` module:
   - ```octave_spectrum``` function to calculate an average SPL spectrum in octave bands, of a signal .
   - ```octave_spectrogram``` function to calculate SPL over time in octave bands, of a signal.
-  - ```amplitude_modulation``` function to calculate the amplitude modulation depth, with the method by Bass et al. (2016).
+  - ```amplitude_modulation``` function to calculate the amplitude modulation depth, with the method by Bass et al. (2016). 
+  - ```octave_am_spectrum``` function to calculate the amplitude modulation depth per octave band, resulting in a full spectrum.
+  - ```ospl_t_out``` function to obtain the timesteps matching the ```ospl_t``` function.
+
+
+- ```wintaur``` module (configspec):
+  - Added ```mech``` parameter to select the noise generation mechanism.
+  - Added ```seed``` parameter to set the seed for the random phase generator.
+
+
+- ```hawc2``` module:
+  - Added ```read_hawc2_aedata``` function to read the aerodynamic blade layout files for HAWC2.
+  - ```numbered_columns``` optional parameter in ```read_hawc2_res()``` to replicate old column name behaviour.
+
 
 ### Changed
 - ```OctaveBand``` class in ```octave_band``` module:
   - Changed the column names of the frequencies in self.f to match the IEC standard.
+- ```ospl_t``` function in ```sound_levels``` module:
+  - Changed the method for splitting in timesteps. This has significantly improved compute times for this function.
+  - **The variable ```t``` has been removed!!**
+  - **The function no longer returns the time output!!** This has been separated into a new function ```ospl_t_out``` (see the **Added** section)
 
 [//]: # (### Deprecated)
 

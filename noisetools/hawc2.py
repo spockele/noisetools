@@ -57,7 +57,7 @@ def read_hawc2_res(model_path: str | os.PathLike,
     sel_file = pd.read_fwf(fname + '.sel', skiprows=12, header=None, skipfooter=1, index_col=0,
                            widths=[12, 32, 10, 120], )
     # Read the data file and shift the column numbers to correspond to the channel numbers
-    dat_file = pd.read_csv(fname + '.dat', delimiter='\s+', header=None, index_col=0, )
+    dat_file = pd.read_csv(fname + '.dat', delimiter='\\s+', header=None, index_col=0, )
     if numbered_columns:
         dat_file.columns = dat_file.columns + 1
     else:
@@ -190,7 +190,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
         return row_idx < header_length or f_idx < 1
 
     # Read the noise data separately from the file.
-    df: pd.DataFrame = pd.read_csv(fpath, header=None, index_col=None, delimiter='\s+',
+    df: pd.DataFrame = pd.read_csv(fpath, header=None, index_col=None, delimiter='\\s+',
                                    skiprows=lambda x: skiprows_func(x), )
     # Create a multi-index to support the 3D nature of the spectrogram output.
     df.index = pd.MultiIndex.from_arrays([dft, df.loc[:, 0], ], names=['t (s)', 'f (Hz)'])
@@ -399,7 +399,7 @@ def read_hawc2_bldata(fpath: str | os.PathLike,
 
     # Read the file again, but parse the data. Uses the previously selected skiplines to only read the BL data.
     # This is more efficient than adding this info line-per-line.
-    df = pd.read_csv(fpath, delimiter='\s+', skiprows=skiplines, header=None, dtype=float)
+    df = pd.read_csv(fpath, delimiter='\\s+', skiprows=skiplines, header=None, dtype=float)
     # Set the column Index.
     df.columns = cols
     # Set the index MultiIndex.
@@ -510,3 +510,25 @@ def write_hawc2_bldata(fpath: str | os.PathLike,
     # Write all these lines to the data file.
     with open(fpath, 'w', encoding='utf8') as f:
         f.writelines(h2_te_file)
+
+
+def read_hawc2_aedata(fpath: str | os.PathLike,
+                      ) -> pd.DataFrame:
+    """
+    Read a HAWC2 aerodynamic blade layout file.
+
+    Parameters
+    ----------
+    fpath: str | os.PathLike
+        Path to the HAWC2 ae data file.
+
+    Returns
+    -------
+    A DataFrame with columns: 'c', 't/c', representing chord and thickness ratio, respectively.
+    The index with name 'r' is the curved length distance along the blade.
+    """
+    df = pd.read_csv(fpath, delimiter='\\s+', skiprows=[0, 1], names=['c', 't/c', 'set', 'sep'],
+                     ).drop(['set', 'sep'], axis='columns')
+    df.index.name = 'r'
+
+    return df
