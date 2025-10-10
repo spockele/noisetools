@@ -20,7 +20,9 @@ import numpy as np
 import os
 
 
-__all__ = ['read_hawc2_res', 'read_hawc2_noise_psd', 'read_hawc2_bldata', 'write_hawc2_bldata', ]
+__all__ = ['read_hawc2_res', 'read_hawc2_noise_psd', 'read_hawc2_bldata', 'read_hawc2_aedata',
+           'extract_hawc2_noise', 'write_hawc2_bldata',
+           ]
 
 
 def read_hawc2_res(model_path: str | os.PathLike,
@@ -513,7 +515,7 @@ def write_hawc2_bldata(fpath: str | os.PathLike,
 
 
 def read_hawc2_aedata(fpath: str | os.PathLike,
-                      ) -> pd.DataFrame:
+                      aeset: int = 1) -> pd.DataFrame:
     """
     Read a HAWC2 aerodynamic blade layout file.
 
@@ -521,14 +523,27 @@ def read_hawc2_aedata(fpath: str | os.PathLike,
     ----------
     fpath: str | os.PathLike
         Path to the HAWC2 ae data file.
+    aeset: int, optional (default = 1)
+        The set number to read, in case there are multiple sets.
 
     Returns
     -------
     A DataFrame with columns: 'c', 't/c', representing chord and thickness ratio, respectively.
     The index with name 'r' is the curved length distance along the blade.
     """
-    df = pd.read_csv(fpath, delimiter='\\s+', skiprows=[0, 1], names=['c', 't/c', 'set', 'sep'],
-                     ).drop(['set', 'sep'], axis='columns')
-    df.index.name = 'r'
+    with open(fpath, 'r') as f:
+        lines = f.readlines()
+        header_idx = 1
+        for n in range(aeset):
+            header = lines[header_idx].split()
+            l_set = int(header[1])
+            set_lines = list(range(header_idx, header_idx + l_set))
+            header_idx += l_set + 1
+
+    df = pd.read_csv(fpath, index_col=0, skiprows=[0, ], names=['r', 'c', 't/c', 'set', 'sep'], delimiter='\\s+', )
+
+    df = df.iloc[set_lines]
+    df = df.drop(['set', 'sep'], axis='columns')
+    df = df.astype(float)
 
     return df
