@@ -53,8 +53,9 @@ class OctaveBand:
     def __init__(self,
                  order: int = 3,
                  band_range: tuple[int, int] = None,
+                 freq_range: tuple[float, float] = None,
                  ) -> None:
-        if band_range is None:
+        if band_range is None and freq_range is None:
             if order == 1:
                 band_range = (-9, 4)
             elif order == 3:
@@ -65,7 +66,12 @@ class OctaveBand:
                 band_range = (-108, 56)
             else:
                 raise ValueError(f'Default band ranges only defined for orders (1, 3, 6, 12). For order={order}, '
-                                 f'define band_range.')
+                                 f'define band_range or freq_range.')
+        elif band_range is None:
+            band_range_0 = (2 * order * (np.log10(freq_range[0] / 1e3) / np.log10(g)) + 1) / 2
+            band_range_1 = (2 * order * (np.log10(freq_range[1] / 1e3) / np.log10(g)) - 1) / 2
+            band_range = (int(np.floor(band_range_0)), int(np.ceil(band_range_1)))
+            # print(band_range)
 
         bands = np.arange(band_range[0], band_range[1] + 1)
 
@@ -77,6 +83,8 @@ class OctaveBand:
         self.f.loc[:, 'f1'] = self.f.loc[:, 'fm'] * g ** (-1 / (2 * order))
         self.f.loc[:, 'f2'] = self.f.loc[:, 'fm'] * g ** (1 / (2 * order))
         self.f.loc[:, 'df'] = self.f.loc[:, 'f2'] - self.f.loc[:, 'f1']
+
+        # print(f'{round(self.f.iloc[0]['f1'])} Hz - {round(self.f.iloc[-1]['f2'])} Hz')
 
     def f_to_band(self,
                   f: np.ndarray | Iterable,
