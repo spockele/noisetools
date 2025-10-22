@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import scipy.signal as spsig
 import pandas as pd
 import numpy as np
+from matplotlib.lines import lineStyles
 
 from .weighting_functions import weigh_signal
 from .octave_band import OctaveBand
@@ -361,7 +362,6 @@ def amplitude_modulation(signal: list | np.ndarray,
     octave = OctaveBand(3, band_range)
     oct_spectrogram = octave_spectrogram(signal, fs, weighting, .1, octave)
 
-    plt.figure('Amplitude modulation')
     # Define the FFT frequencies of the FFT{SPL(t)}.
     fft_f = np.fft.rfftfreq(100, .1)
     # Create empty pandas Series to store the resulting modulation depths.
@@ -380,15 +380,25 @@ def amplitude_modulation(signal: list | np.ndarray,
         pp3 = np.polynomial.Polynomial.fit(spl_t, spl_sig, deg=3)
         spl_sig_det = spl_sig - pp3(spl_t)
 
-        plt.plot(spl_t, spl_sig_det, color=tableau[ii//100], linewidth=.5)
-
         # 2) Calculate the FFT of the detrended SPL(t).
         spl_fft = np.fft.rfft(spl_sig_det, )
 
         # 3) Calculate the spectral density.
         spl_spectrum = np.abs(spl_fft) / (100**2)
+
         # 4) Step 1: Find peak frequencies of SPL(f).
         spl_peak_idx, _ = spsig.find_peaks(spl_spectrum, threshold=np.std(spl_spectrum))
+
+        if verbose:
+            plt.figure('Amplitude modulation')
+            plt.plot(spl_t, spl_sig_det, color=tableau[ii//100], linewidth=.5)
+
+            plt.figure(f'Spectrum {ii // 100}')
+            plt.fill_betweenx((0, 1), 1 * expected_bpf[0], 1 * expected_bpf[1], color='k', alpha=.250, zorder=-100)
+            plt.fill_betweenx((0, 1), 2 * expected_bpf[0], 2 * expected_bpf[1], color='k', alpha=.125, zorder=-100)
+            plt.fill_betweenx((0, 1), 3 * expected_bpf[0], 3 * expected_bpf[1], color='k', alpha=.125, zorder=-100)
+            plt.bar(fft_f, spl_spectrum, color=tableau[ii//100], width=.05, alpha=.25)
+            plt.plot(fft_f[spl_peak_idx], spl_spectrum[spl_peak_idx], '|', color=tableau[ii//100])
 
         # Already calculate all local maxima for 6).
         spl_local_max = spsig.argrelmax(spl_spectrum)[0]
@@ -406,7 +416,13 @@ def amplitude_modulation(signal: list | np.ndarray,
                 # 5) Calculate the prominence of the peak and check if it is >= 4..
                 level_peak = spl_spectrum[peak_idx]
                 side_idx = [peak_idx - 3, peak_idx - 2, peak_idx + 2, peak_idx + 3]
-                level_side = sum(spl_spectrum[side_idx]) / 4
+                side_idx = [idx for idx in side_idx if idx >= 0]
+                level_side = sum(spl_spectrum[side_idx]) / len(side_idx)
+
+                if verbose:
+                    plt.figure(f'Spectrum {ii // 100}')
+                    plt.plot(fft_f[side_idx], spl_spectrum[side_idx], '_', color=tableau[ii//100])
+                    plt.plot(fft_f[side_idx], len(side_idx) * [level_side, ], color=tableau[ii//100])
 
                 if level_peak / level_side >= 4:
                     if verbose:
@@ -487,21 +503,30 @@ def amplitude_modulation(signal: list | np.ndarray,
         # 7d) Inverse FFT of the newly constructed array.
         spl_reconstruct = np.fft.irfft(reconstruct_fft, )
 
-        # 8) Resulting signal.
-        plt.plot(spl_t, spl_reconstruct, color=tableau[ii//100])
-
         # 9) Determine the modulation depth.
         l5, l95 = np.percentile(spl_reconstruct, [5, 95])
         modulation_depth.loc[ii // 10] = abs(l95 - l5)
 
+        # 8) Resulting signal.
+        if verbose:
+            plt.figure(f'Spectrum {ii // 100}')
+            plt.bar(fft_f, np.abs(reconstruct_fft) / (100**2), color=tableau[ii//100], width=.05)
+            plt.figure('Amplitude modulation')
+            plt.plot(spl_t, spl_reconstruct, color=tableau[ii//100])
+
+            plt.plot(spl_t, len(spl_t) * [l5, ], ':', color=tableau[ii // 100])
+            plt.plot(spl_t, len(spl_t) * [l95, ], ':', color=tableau[ii // 100])
+
         ii += 100
 
     if verbose:
-        print(modulation_depth)
+        plt.figure('Amplitude modulation')
         plt.ylim(-5, 5)
+
+        for ii in range(ii // 100):
+            plt.figure(f'Spectrum {ii}')
+            plt.ylim(0, .01)
         plt.show()
-    else:
-        plt.close('Amplitude modulation')
 
     return modulation_depth
 
