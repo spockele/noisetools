@@ -122,7 +122,7 @@ class OctaveBand:
                                ) -> np.ndarray:
         """
         1D interpolation of an octave band spectrum to a narrowband spectrum, to constant values per band.
-        Note: this function is designed to interpolated attenuation/amplification spectra.
+        Note: this function is designed to interpolate attenuation/amplification spectra.
         For interpolation from octave band dB data to narrowband dB/Hz data, convert dat_octave to dB/Hz beforehand.
 
         Parameters
@@ -197,7 +197,12 @@ class OctaveBand:
         #       in f_octave and dat_octave. Hypothesis: no, because intermediate linear interpolation to self.f.index.
         for bi, band in enumerate(self.f.index):
             # Select the band based on the frequency.
-            band_select = (self.f.loc[band, 'f1'] <= f_interpolate) & (f_interpolate < self.f.loc[band, 'f2'])
+            if not bi:
+                band_select = f_interpolate < self.f.loc[band, 'f2']
+            elif bi < len(self.f.index):
+                band_select = (self.f.loc[band, 'f1'] <= f_interpolate) & (f_interpolate < self.f.loc[band, 'f2'])
+            else:
+                band_select = self.f.loc[band, 'f1'] <= f_interpolate
             # Add the data from this band to the result array.
             result[band_select] = dat_intermediate[bi]
 
@@ -294,16 +299,16 @@ if __name__ == '__main__':
             lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
             lti[ltl] = 1 / lti[lth][::-1]
 
-            for band_select in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2]:
-                lti_band = lti * octave.f.loc[band_select, 'fm']
+            for band in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2]:
+                lti_band = lti * octave.f.loc[band, 'fm']
                 plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
                 plt.plot(lti_band, limit_table['limit 1+'], 'k--')
 
                 # plt.vlines([fm, ], -5, 90, colors='0.75', linestyles='--')
-                plt.vlines(octave.f.loc[band_select, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
+                plt.vlines(octave.f.loc[band, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
 
                 # sos digital type
-                sos = octave.band_filter(band_select, analog=False, output='sos', fs=fs_select)
+                sos = octave.band_filter(band, analog=False, output='sos', fs=fs_select)
                 w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
                 plt.semilogx(w[(0 < w) & (w < fs_select / 2)], -20 * np.log10(np.abs(h[(0 < w) & (w < fs_select / 2)])),
                              label='sos digital', color='tab:red')
