@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the optional ```overwrite``` variable to the ```process_directory``` functions, so it doesn't do double work after an interruption.
 
 
+- ```WavFile``` class in ```wavfile``` module:
+  - Added option for a multiplicative calibration value ```cal``` in class initialiser. To avoid double divisions.
+
+
 ### Changed
 - ```OctaveBand``` class in ```octave_band``` module:
   - Changed the column names of the frequencies in self.f to match the IEC standard.

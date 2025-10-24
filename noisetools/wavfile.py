@@ -42,6 +42,12 @@ class WavFile:
         Normalisation factor that was used to write the original WAV file. The values in the WAV file are divided by
         this factor directly after reading. This factor is not used for writing. The signals are converted to 32-bit
         floats and new WAV files are written as such.
+        IMPORTANT: both ```norm``` and ```cal``` are applied to the data.
+    cal: int | float, optional (default=1.)
+        Calibration factor for the wav file signal. The values in the WAV file are multiplied by this factor directly
+        after reading. This factor is not used for writing. The signals are converted to 32-bit floats and new WAV files
+        are written as such.
+        IMPORTANT: both ```norm``` and ```cal``` are applied to the data.
     wav: numpy.ndarray, optional
         Optional entry for the creation of a new WAV file. For mono signals, this should be a 1D array.
         For stereo signals, this should be a 2D array with shape (length, 2).
@@ -75,6 +81,7 @@ class WavFile:
     def __init__(self,
                  filename: str,
                  norm: int | float = 1.,
+                 cal: int | float = 1.,
                  wav: np.ndarray = None,
                  fs: int = None,
                  pcm: str = None,
@@ -111,7 +118,8 @@ class WavFile:
                 wav = wav.astype(np.float32)
                 wav = 2 * (wav - pcm_table[pcm][0]) / (pcm_table[pcm][1] - pcm_table[pcm][0]) - 1.
 
-        wav: np.ndarray = wav / norm
+        # Apply both calibration and normalisation factors to the wav file data.
+        wav: np.ndarray = cal * wav / norm
 
         # It is now certain the variable wav is filled.
         # Check that wav has maximum two dimensions, since there is only a sample and channel dimension.
