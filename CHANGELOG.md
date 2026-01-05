@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - ```OctaveBand``` class in ```octave_band``` module:
-  - A class 1 IEC 61260-1:2013 compliant octave band filter design function.
+  - Added class 1 IEC 61260-1:2013 compliant octave band filter design function.
   - Option to define a frequency range between which the octave bands should be defined. This is an alternative to the existing band range parameter.
   
 
