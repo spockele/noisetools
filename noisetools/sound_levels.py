@@ -20,7 +20,6 @@ import matplotlib.pyplot as plt
 import scipy.signal as spsig
 import pandas as pd
 import numpy as np
-from matplotlib.lines import lineStyles
 
 from .weighting_functions import weigh_signal
 from .octave_band import OctaveBand
@@ -185,7 +184,6 @@ def ospl_t(signal: list | np.ndarray,
 
 def octave_index(fs: int | float | np.number,
                  octave: OctaveBand = None,
-                 order: int = 3,
                  ) -> tuple[pd.MultiIndex, OctaveBand]:
     """
     Set up the OctaveBand instance and create the MultiIndex for the octave band OSPL functions.
@@ -196,9 +194,6 @@ def octave_index(fs: int | float | np.number,
         The sampling frequency of the digital signal.
     octave: OctaveBand, optional
         Instance of the noisetools.octave_band.OctaveBand class to base the octave band spectrum on.
-    order: int, optional (default = 3)
-        Order b of the octave bands. This will result in 1/b octave bands.
-        This parameter will be ignored if parameter ```octave``` is provided.
 
     Returns
     -------
@@ -209,7 +204,7 @@ def octave_index(fs: int | float | np.number,
 
     """
     if octave is None:
-        octave = OctaveBand(order=order)
+        octave = OctaveBand()
 
     fs_fltr = octave.f.loc[:, 'f2'] < fs / 2
     out_index = pd.MultiIndex.from_arrays([octave.f.index[fs_fltr],
@@ -225,7 +220,6 @@ def octave_spectrum(signal: list | np.ndarray,
                     fs: int | float | np.number,
                     weighting: str = None,
                     octave: OctaveBand = None,
-                    order: int = 3,
                     ) -> pd.Series:
     """
     Calculate the OSPL of a signal per octave band.
@@ -238,11 +232,8 @@ def octave_spectrum(signal: list | np.ndarray,
         The sampling frequency of the digital signal.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    octave: OctaveBand, optional
+    octave: OctaveBand, optional (default = OctaveBand())
         Instance of the noisetools.octave_band.OctaveBand class to base the octave band spectrum on.
-    order: int, optional (default = 3)
-        Order b of the octave bands. This will result in 1/b octave bands.
-        This parameter will be ignored if parameter ```octave``` is provided.
 
     Returns
     -------
@@ -253,7 +244,7 @@ def octave_spectrum(signal: list | np.ndarray,
         - ```df```: the octave band width (Hz)
 
     """
-    out_index, octave = octave_index(fs, octave, order)
+    out_index, octave = octave_index(fs, octave)
 
     out_spectrum = pd.Series(index=out_index, dtype=float)
 
@@ -269,7 +260,7 @@ def octave_spectrogram(signal: list | np.ndarray,
                        weighting: str = None,
                        delta_t: float | np.number = 1.,
                        octave: OctaveBand = None,
-                       order: int = 3,
+                       complete: bool = True,
                        ) -> pd.DataFrame:
     """
     Calculate the OSPL over time, of a digital signal, per octave band.
@@ -284,11 +275,12 @@ def octave_spectrogram(signal: list | np.ndarray,
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     delta_t: float | np.number, optional (default=1.)
         Desired timestep in the OSPL output, in seconds.
-    octave: OctaveBand, optional
+    octave: OctaveBand, optional (default = OctaveBand())
         Instance of the noisetools.octave_band.OctaveBand class to base the octave band spectrum on.
-    order: int, optional (default = 3)
-        Order b of the octave bands. This will result in 1/b octave bands.
-        This parameter will be ignored if parameter ```octave``` is provided.
+    complete: bool, optional (default=True)
+        In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
+        calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
+        in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
 
     Returns
     -------
@@ -299,14 +291,14 @@ def octave_spectrogram(signal: list | np.ndarray,
         - ```df```: the octave band width (Hz)
 
     """
-    out_index, octave = octave_index(fs, octave, order)
+    out_index, octave = octave_index(fs, octave)
 
-    out_t = ospl_t_out(signal.size, fs, delta_t, complete=True)
+    out_t = ospl_t_out(signal.size, fs, delta_t, complete=complete)
     out_spectrogram = pd.DataFrame(index=out_index, columns=out_t, dtype=float)
 
     for band_select in out_index.get_level_values('band'):
         band_signal = octave.filter_signal(signal, fs, band_select)
-        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, weighting, delta_t, complete=True)
+        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, weighting, delta_t, complete=complete)
 
     return out_spectrogram
 
@@ -315,7 +307,7 @@ def amplitude_modulation(signal: list | np.ndarray,
                          fs: int | float | np.number,
                          expected_bpf: tuple[int | float | np.number, int | float | np.number],
                          weighting: str = 'A',
-                         frequency_range: str | int = 'reference',
+                         freq_range: str | tuple[float, float] = 'reference',
                          verbose: bool = False,
                          ) -> pd.Series:
     """
@@ -331,7 +323,7 @@ def amplitude_modulation(signal: list | np.ndarray,
         Range of frequencies between which the blade-pass frequency of the wind turbine is expected (Hz).
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    frequency_range: str | int, optional (default = 'reference')
+    freq_range: str | tuple[float, float], optional (default = 'reference')
         Indication of which frequency range from the IOA report to use (see also section 4.3.1 [1]_):
             - 'low': 50 - 200 Hz
             - 'reference': 100 - 400 Hz
@@ -352,14 +344,17 @@ def amplitude_modulation(signal: list | np.ndarray,
         Aug. 2016.
 
     """
-    if isinstance(frequency_range, str):
+    if isinstance(freq_range, str):
         # The relevant bands for the selected range of frequency.
-        band_range = {'low': (-13, -7), 'reference': (-10, -4), 'high': (-7, -1)}[frequency_range.lower()]
+        band_range = {'low': (-13, -7), 'reference': (-10, -4), 'high': (-7, -1)}[freq_range.lower()]
+        octave = OctaveBand(3, band_range)
+    elif isinstance(freq_range, tuple):
+        octave = OctaveBand(3, freq_range=freq_range)
     else:
-        band_range = (frequency_range, frequency_range)
+        raise TypeError(f'Invalid type for parameter freq_range. '
+                        f'Expected str or tuple[float, float], got {type(freq_range)}.')
 
     # 0) Calculate the 1/3 octave band spectrogram with timestep 100ms.
-    octave = OctaveBand(3, band_range)
     oct_spectrogram = octave_spectrogram(signal, fs, weighting, .1, octave)
 
     # Define the FFT frequencies of the FFT{SPL(t)}.
@@ -529,52 +524,3 @@ def amplitude_modulation(signal: list | np.ndarray,
         plt.show()
 
     return modulation_depth
-
-
-def octave_am_spectrum(signal: list | np.ndarray,
-                       fs: int | float | np.number,
-                       expected_bpf: tuple[int | float | np.number, int | float | np.number],
-                       weighting: str = None,
-                       verbose: bool = False,
-                       ) -> pd.DataFrame:
-    """
-    1/3 Octave band spectrum of the amplitude modulation, based on the method by Bass et al. [1]_
-
-    Parameters
-    ----------
-    signal: array_like
-        Array with the digital signal.
-    fs: number
-        The sampling frequency of the digital signal.
-    expected_bpf: tuple[number, number]
-        Range of frequencies between which the blade-pass frequency of the wind turbine is expected (Hz).
-    weighting: str, optional
-        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
-    verbose: bool, optional
-        Turn on print statements about the detection/acceptance of the BPF and harmonics.
-        Also turns on plotting of the detrended SPL(t) and filtered SPL(t).
-
-    Returns
-    -------
-    A pandas DataFrame with the amplitude modulation in dB, every 10s (in accordance with Bass et al. [1]_).
-
-    References
-    ----------
-    .. [1] J. Bass et al., ‘A Method for Rating Amplitude Modulation in Wind Turbine Noise’, Institute of Acoustics,
-        Noise Working Group (Wind Turbine Noise), United Kingdom, Amplitude Modulation Working Group Final Report,
-        Aug. 2016.
-
-    """
-    octave = OctaveBand(3, band_range=(-17, 12))
-
-    am_spectrum = []
-
-    for band_select in octave.f.index:
-        am_series = amplitude_modulation(signal, fs, expected_bpf, weighting,
-                                         frequency_range=band_select, verbose=verbose)
-        am_spectrum.append(am_series)
-
-    am_spectrum = pd.concat(am_spectrum, axis='columns').T
-    am_spectrum.index = octave_index(fs, octave)[0]
-
-    return am_spectrum
