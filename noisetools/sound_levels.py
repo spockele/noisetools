@@ -27,7 +27,7 @@ from .octave_band import OctaveBand
 tableau = list(TABLEAU_COLORS.keys())
 __all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'ospl_t_out',
            'octave_spectrum', 'octave_spectrogram',
-           'amplitude_modulation', 'octave_am_spectrum', ]
+           'amplitude_modulation', ]
 
 
 def equivalent_pressure(signal: list | np.ndarray,
