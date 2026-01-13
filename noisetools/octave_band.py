@@ -24,6 +24,13 @@ import numpy as np
 
 g = 10 ** (3 / 10)
 
+nominal_fm_3 = [25, 31.5, 40., 50., 63., 80., 100., 125., 160., 200.,
+                250., 315., 400., 500., 630., 800., 1e3, 1.25e3, 1.6e3, 2e3,
+                2.5e3, 3.15e3, 4e3, 5e3, 6.3e3, 8e3, 10e3, 12.5e3, 16e3, 20e3,
+                ]
+nominal_fm_1 = [31.5, 63., 125., 250., 500., 1e3, 2e3, 4e3, 8e3, 16e3,
+                ]
+
 
 class OctaveBand:
     """
@@ -52,22 +59,19 @@ class OctaveBand:
     """
     def __init__(self,
                  order: int = 3,
-                 band_range: tuple[int, int] = None,
-                 freq_range: tuple[float, float] = None,
+                 band_range: tuple[int, int] | list[int, int] = None,
+                 freq_range: tuple[float, float] | list[float, float] = None,
+                 nominal_fm: tuple[float] | list[float] = None,
                  ) -> None:
         if band_range is None and freq_range is None:
             if order == 1:
-                band_range = (-9, 4)
+                band_range = (-5, 4)
             elif order == 3:
-                band_range = (-27, 14)
-            elif order == 6:
-                band_range = (-54, 28)
-            elif order == 12:
-                band_range = (-108, 56)
+                band_range = (-16, 13)
             else:
-                raise ValueError(f'Default band ranges only defined for orders (1, 3, 6, 12). For order={order}, '
-                                 f'define band_range or freq_range.')
-        elif band_range is None:
+                freq_range = (22.387, 22387.)
+
+        if band_range is None:
             band_range_0 = (2 * order * (np.log10(freq_range[0] / 1e3) / np.log10(g)) + 1) / 2
             band_range_1 = (2 * order * (np.log10(freq_range[1] / 1e3) / np.log10(g)) - 1) / 2
             band_range = (int(np.floor(band_range_0)), int(np.ceil(band_range_1)))
@@ -77,7 +81,10 @@ class OctaveBand:
 
         self.order = order
         self.band_range = (band_range[0], band_range[1] - 1)
-        self.f = pd.DataFrame(index=pd.Index(bands, name='band'), columns=['f1', 'fm', 'f2', 'df'])
+        self.f = pd.DataFrame(index=pd.Index(bands, name='band', dtype=int),
+                              columns=['f1', 'fm', 'f2', 'df'],
+                              dtype=float
+                              )
 
         self.f.loc[:, 'fm'] = 1e3 * g ** (self.f.index / order)
         self.f.loc[:, 'f1'] = self.f.loc[:, 'fm'] * g ** (-1 / (2 * order))
@@ -299,16 +306,16 @@ if __name__ == '__main__':
             lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
             lti[ltl] = 1 / lti[lth][::-1]
 
-            for band in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2]:
-                lti_band = lti * octave.f.loc[band, 'fm']
+            for bnd in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2]:
+                lti_band = lti * octave.f.loc[bnd, 'fm']
                 plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
                 plt.plot(lti_band, limit_table['limit 1+'], 'k--')
 
                 # plt.vlines([fm, ], -5, 90, colors='0.75', linestyles='--')
-                plt.vlines(octave.f.loc[band, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
+                plt.vlines(octave.f.loc[bnd, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
 
                 # sos digital type
-                sos = octave.band_filter(band, analog=False, output='sos', fs=fs_select)
+                sos = octave.band_filter(bnd, analog=False, output='sos', fs=fs_select)
                 w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
                 plt.semilogx(w[(0 < w) & (w < fs_select / 2)], -20 * np.log10(np.abs(h[(0 < w) & (w < fs_select / 2)])),
                              label='sos digital', color='tab:red')

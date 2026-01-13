@@ -169,7 +169,7 @@ def ospl_t(signal: list | np.ndarray,
     # Determine the number of timesteps to compute.
     n_step = signal.size / step
     if complete and int(n_step) < n_step:
-            n_step = int(n_step) + 1
+        n_step = int(n_step) + 1
     else:
         n_step = int(n_step)
 

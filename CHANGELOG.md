@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - ```OctaveBand``` class in ```octave_band``` module:
   - Added class 1 IEC 61260-1:2013 compliant octave band filter design function.
-  - Option to define a frequency range between which the octave bands should be defined. This is an alternative to the existing band range parameter.
-  
+  - Option to define a frequency range between which the octave bands should be defined.
+  - Added a general frequency range for fractional octave bands other than those previously defined.
+
 
 - ```sound_levels``` module:
   - ```octave_spectrum``` function to calculate an average SPL spectrum in octave bands, of a signal .
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - ```OctaveBand``` class in ```octave_band``` module:
   - Changed the column names of the frequencies in self.f to match the IEC standard.
+  - The default band range for 1/1 and 1/3 octave bands now matches the nominal frequencies defined in the IEC standard. 1/6 and 1/12 band ranges have been modified to a similar range.
 
 
 - ```ospl_t``` function in ```sound_levels``` module:
