@@ -331,6 +331,7 @@ if __name__ == '__main__':
         plt.ylabel('Attenuation (dB)')
         plt.xlim(10, 25e3)
         plt.xlabel('f (Hz)')
+        plt.legend()
         plt.grid()
 
     plt.show()
