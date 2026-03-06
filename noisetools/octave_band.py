@@ -290,44 +290,59 @@ class OctaveBand:
 
 
 if __name__ == '__main__':
-    for fs_select in (44.1e3, 48.0e3, 51.2e3):
-        limit_table = pd.read_csv('noisetools/octave_band_limits.csv', index_col=0)
-        plot_limit = (-1 <= limit_table.index) & (limit_table.index <= 1)
+    fs_select = 51.2e3
+    limit_table = pd.read_csv('noisetools/octave_band_limits.csv', index_col=0)
+    plot_limit = (-1 <= limit_table.index) & (limit_table.index <= 1)
 
-        lth = limit_table.index.to_numpy() > 0
-        ltl = limit_table.index.to_numpy() < 0
+    limit_table = limit_table.loc[plot_limit]
 
-        for octave_select in (1, 3, 6, 12):
-            plt.figure(f'1/{octave_select} octave band, fs={int(fs_select)} Hz', figsize=(16, 4))
-            octave = OctaveBand(octave_select)
+    lth = limit_table.index.to_numpy() > 0
+    ltl = limit_table.index.to_numpy() < 0
 
-            lti = limit_table.index.to_numpy(copy=True)
-            lti[lti == 0] = 1.
-            lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
-            lti[ltl] = 1 / lti[lth][::-1]
+    for octave_select in (1, 3, ):
+        octave = OctaveBand(octave_select)
 
-            for bnd in octave.f.index[octave.f.loc[:, 'f2'] < fs_select / 2]:
-                lti_band = lti * octave.f.loc[bnd, 'fm']
-                plt.plot(lti_band[plot_limit], limit_table.loc[plot_limit, 'limit 1-'], 'k:')
-                plt.plot(lti_band, limit_table['limit 1+'], 'k--')
+        lti = limit_table.index.to_numpy(copy=True)
+        lti[lti == 0] = 1.
+        lti[lth] = 1 + (g ** (1 / (2 * octave_select)) - 1) / (g ** .5 - 1) * (g ** lti[lth] - 1)
+        lti[ltl] = 1 / lti[lth][::-1]
 
-                # plt.vlines([fm, ], -5, 90, colors='0.75', linestyles='--')
-                plt.vlines(octave.f.loc[bnd, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
+        for bnd in octave.f.index:
+            lti_band = lti * octave.f.loc[bnd, 'fm']
+            print(octave.f.loc[bnd, 'fm'], lti_band[0], lti_band[-1])
+            # sos digital type
+            sos = octave.band_filter(bnd, analog=False, output='sos', fs=fs_select)
+            w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
 
-                # sos digital type
-                sos = octave.band_filter(bnd, analog=False, output='sos', fs=fs_select)
-                w, h = spsig.freqz_sos(sos, fs=fs_select, worN=np.linspace(lti_band[0], lti_band[-1], 1001))
-                plt.semilogx(w[(0 < w) & (w < fs_select / 2)], -20 * np.log10(np.abs(h[(0 < w) & (w < fs_select / 2)])),
-                             label='sos digital', color='tab:red')
+            plt.figure(f'1/{octave_select} octave band (amplitude)', figsize=(16, 4))
+            plt.plot(lti_band, limit_table['limit 1-'], 'k:')
+            plt.plot(lti_band, limit_table['limit 1+'], 'k--')
+            plt.vlines(octave.f.loc[bnd, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
 
-            plt.vlines([fs_select / 2], -5, 90, colors='k', )
-            plt.xlim(octave.f.loc[octave.band_range[0], 'f1'] / 1.1, 1.1 * fs_select / 2)
-            plt.ylim(20, -1)
+            plt.semilogx(w[0 < w], -20 * np.log10(np.abs(h[0 < w])), label='sos digital', color='tab:red')
 
-            plt.xlabel('Frequency (Hz)')
-            plt.ylabel('Octave band filter attenuation (dB)')
+            plt.figure(f'1/{octave_select} octave band (phase)', figsize=(16, 4))
+            plt.semilogx(w[0 < w], 2 * np.pi / w[0 < w] * np.angle(h[0 < w]), label='sos digital',
+                         # color='tab:red'
+                         )
+            plt.vlines(octave.f.loc[bnd, ['f1', 'f2']], -5, 90, colors='0.75', linestyles=':')
 
-            plt.subplots_adjust(.05, .125, .99, .99)
-            plt.grid()
+        plt.figure(f'1/{octave_select} octave band (amplitude)', figsize=(16, 4))
+        plt.vlines([fs_select / 2], -5, 90, colors='k', )
+        plt.xlim(octave.f.loc[octave.band_range[0], 'f1'] / 1.1, 1.1 * fs_select / 2)
+        plt.ylim(20, -1)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Octave band filter attenuation (dB)')
+        plt.subplots_adjust(.05, .125, .99, .99)
+        plt.grid()
+
+        plt.figure(f'1/{octave_select} octave band (phase)', figsize=(16, 4))
+        plt.vlines([fs_select / 2], -5, 90, colors='k', )
+        plt.xlim(octave.f.loc[octave.band_range[0], 'f1'] / 1.1, 1.1 * fs_select / 2)
+        plt.ylim(-1.1, 1.1)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Octave band filter phase shift (seconds)')
+        plt.subplots_adjust(.05, .125, .99, .99)
+        plt.grid()
 
     plt.show()
