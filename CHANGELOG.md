@@ -40,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added option for a multiplicative calibration value ```cal``` in class initialiser. To avoid double divisions.
 
 
+- ```demo_array``` module to work with data from our section's in-house microphone array solution.
+
+
 ### Changed
 - ```OctaveBand``` class in ```octave_band``` module:
   - Changed the column names of the frequencies in self.f to match the IEC standard.

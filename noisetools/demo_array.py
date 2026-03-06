@@ -2,6 +2,7 @@
 the TU Delft Aerospace Engineering faculty.
 """
 
+from typing import Literal
 from nptdms import TdmsFile
 from datetime import datetime
 import pandas as pd
@@ -37,11 +38,35 @@ class ArrayData:
 
     tdms: TdmsFile
     """
+    calibration = pd.read_csv(os.path.join(os.path.dirname(__file__), 'array_calibration.csv'),
+                              index_col=(0, 1, 2, 3, ),
+                              )
+    calibration.columns = calibration.columns.astype(float)
 
     def __init__(self,
                  directory: str | os.PathLike,
                  read: bool = False,
+                 configuration: Literal['normal', 'ge_exp'] = 'normal',
+                 calibration_unit: Literal['dB', 'nd'] = 'nd',
                  ) -> None:
+
+        if configuration == 'normal':
+            select = self.calibration.index.get_level_values('connector') == self.calibration.index.get_level_values('microphone')
+            self.calibration = self.calibration.loc[select, :]
+            self.calibration.index = self.calibration.index.droplevel('microphone')
+            self.uncertainty = self.calibration.loc[(slice(None), calibration_unit, 'uncertainty'), :]
+            self.calibration = self.calibration.loc[(slice(None), calibration_unit, 'calibration')]
+
+        elif configuration == 'ge_exp':
+            select1 = self.calibration.index.get_level_values('connector') != self.calibration.index.get_level_values('microphone')
+            select2 = self.calibration.index.get_level_values('connector') <= 32
+            self.calibration = self.calibration.loc[np.logical_xor(select1, select2), :]
+            self.calibration.index = self.calibration.index.droplevel('microphone')
+            self.uncertainty = self.calibration.loc[(slice(None), calibration_unit, 'uncertainty'), :]
+            self.calibration = self.calibration.loc[(slice(None), calibration_unit, 'calibration')]
+
+        elif configuration == 'calibration':
+            self.calibration = None
 
         self.directory = os.path.abspath(directory)
         with open(os.path.join(self.directory, 'info.txt')) as f:
@@ -55,15 +80,21 @@ class ArrayData:
         self.start_time = int(lines['start_time'][0])
         self.start_timestamp = datetime.strptime(f'{lines['start_timestamp'][0]} {lines['start_timestamp'][1]}',
                                                  '%d/%m/%Y %H:%M:%S.%f')
-        self.length = float(lines['measurement_length'][0])
         self.comments = ' '.join(lines['comments'])
 
         self.read = read
         self.open = True
+
         if self.read:
             self.tdms = TdmsFile.read(os.path.join(self.directory, 'acoustic_data.tdms'))
+            dat = self.tdms['Microphones Data'][f'Microphone 1'].data * 1.57 / (2 ** (16 - 1)) / (12.589 / 1e3)
         else:
             self.tdms = TdmsFile.open(os.path.join(self.directory, 'acoustic_data.tdms'))
+            dat = self.tdms['Microphones Data'][f'Microphone 1'][:] * 1.57 / (2 ** (16 - 1)) / (12.589 / 1e3)
+
+        self.length = dat.size
+        self.duration = self.length / self.fs
+        self.time = pd.Index(np.linspace(0, self.duration, self.length, endpoint=False), name='t (s)')
 
     def close(self) -> None:
         """
@@ -75,7 +106,7 @@ class ArrayData:
         self.read = False
         self.open = False
 
-    def open(self) -> None:
+    def tdms_open(self) -> None:
         """
 
         """
@@ -83,7 +114,7 @@ class ArrayData:
             self.open = True
             self.tdms = TdmsFile.open(os.path.join(self.directory, 'acoustic_data.tdms'))
 
-    def read(self) -> None:
+    def tdms_read(self) -> None:
         """
 
         """
@@ -109,12 +140,11 @@ class ArrayData:
 
         """
         if self.read:
-            dat = self.tdms['Microphones Data'][f'Microphone {mic}'].data * 1.57 / (2**(16-1)) / (12.589 / 1e3)
+            dat = self.tdms['Microphones Data'][f'Microphone {mic}'].raw_data * np.float32(1.57 / (2**(16-1)) / (12.589 / 1e3))
         else:
-            dat = self.tdms['Microphones Data'][f'Microphone {mic}'][:] * 1.57 / (2**(16-1)) / (12.589 / 1e3)
+            dat = self.tdms['Microphones Data'][f'Microphone {mic}'].read_data(scaled=False) * np.float32(1.57 / (2**(16-1)) / (12.589 / 1e3))
 
-        idx = pd.Index(np.linspace(0, dat.size / self.fs, dat.size), name='t (s)')
-        return pd.Series(dat, index=idx, name=mic, dtype=float, ) - np.mean(dat)
+        return pd.Series(dat, index=self.time, name=mic, ) - np.mean(dat)
 
     def read_mics(self,
                       mics: list[int] | tuple[int],
