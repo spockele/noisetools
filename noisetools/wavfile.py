@@ -74,7 +74,7 @@ class WavFile:
         Duration of the signal(s) in seconds.
     duration_string: str
         String representation of the signal(s) duration in mm:ss:ms_.
-    t: numpy.ndarray
+    time: numpy.ndarray
         Array containing the time vector of the WAV file in seconds.
 
     """
@@ -111,7 +111,7 @@ class WavFile:
                 pcm = pcm.lower()
 
                 if pcm not in pcm_table.keys():
-                    raise ValueError('Given WV file PCM format not supported by noisetools.')
+                    raise ValueError('Given WAV file PCM format not supported by noisetools.')
                 elif pcm_table[pcm][2] != wav.dtype:
                     raise ValueError(f'Provided PCM format ({pcm}) does not match the obtained dtype ({wav.dtype}).')
 
@@ -144,7 +144,7 @@ class WavFile:
         self.length = self.wav_left.size
         self.duration = float(self.length / self.fs)
         self.duration_string = self.seconds_to_mmssms(self.duration)
-        self.t = np.linspace(0, self.duration, self.length)
+        self.time = np.linspace(0, self.duration, self.length, endpoint=False)
 
     def __repr__(self) -> str:
         mono_str = 'mono' if self.check_mono() else 'stereo'
@@ -306,7 +306,7 @@ class WavFile:
         self.length = self.wav_left.size
         self.duration = self.length / self.fs
         self.duration_string = self.seconds_to_mmssms(self.duration)
-        self.t = np.linspace(self.t[0], self.duration, self.length)
+        self.time = np.linspace(0, self.duration, self.length, endpoint=False)
 
     def write(self,
               overwrite: bool = True,
@@ -375,7 +375,7 @@ class WavFile:
         if isinstance(t1, str):
             t1 = self.mmssms_to_seconds(t1)
 
-        select = (t0 <= self.t) & (self.t < t1) if t1 != self.duration else (t0 <= self.t) & (self.t <= t1)
+        select = (t0 <= self.time) & (self.time < t1) if t1 != self.duration else (t0 <= self.time) & (self.time <= t1)
 
         if filename is None:
             filename = self.filename.replace('.wav', '_export.wav')

@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Time compensation of the OSPL function was wrong when ```t``` was not provided. Changed the integration to use the discrete signal length instead.
 - Constant extrapolation in ```OctaveBand.interp1d_to_narrowband``` resulted in zeroes outside the band range, which was not desired behaviour.
+- Time array in ```wavfile.WavFile``` included the end time, which resulted in a slightly offset sampling frequency of this array.
 
 ## [v0.1.0]
 Public version of this repository. No functional differences from v0.0.3.
