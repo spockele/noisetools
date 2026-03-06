@@ -1,6 +1,6 @@
 """Functions related to the levels of measured or simulated sound signals.
 """
-
+from fontTools.ufoLib.utils import deprecated
 # Copyright 2025 Josephine Pockelé
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,20 +20,48 @@ import matplotlib.pyplot as plt
 import scipy.signal as spsig
 import pandas as pd
 import numpy as np
+import warnings
 
 from .weighting_functions import weigh_signal
 from .octave_band import OctaveBand
 
 tableau = list(TABLEAU_COLORS.keys())
-__all__ = ['equivalent_pressure', 'ospl', 'ospl_t', 'ospl_t_out',
+__all__ = ['p2eq', 'ospl', 'ospl_t', 't_out',
            'octave_spectrum', 'octave_spectrogram',
            'amplitude_modulation', ]
 
-
-def equivalent_pressure(signal: list | np.ndarray,
-                        fs: int | float | np.number,
-                        weighting: str = None,
+@deprecated
+def equivalent_pressure(*args,
+                        **kwargs,
                         ) -> float:
+    """
+    DEPRECATED
+
+    Calculate the equivalent pressure (Pe^2) of the input sound signal.
+
+    Parameters
+    ----------
+    *args
+        See p2eq.
+    **kwargs
+        See p2eq
+
+    Returns
+    -------
+    Equivalent pressure in Pa^2 (weighted to selected weighting)
+
+    """
+    warnings.warn("The function 'equivalent_pressure()' is renamed to 'p2eq'. "
+                  "equivalent_pressure will be removed in a future version of noisetools",
+                  DeprecationWarning
+                  )
+    return p2eq(*args, **kwargs)
+
+
+def p2eq(signal: list | np.ndarray,
+         fs: int | float | np.number,
+         weighting: str = None,
+         ) -> float:
     """
     Calculate the equivalent pressure (Pe^2) of the input sound signal.
 
@@ -53,18 +81,20 @@ def equivalent_pressure(signal: list | np.ndarray,
     """
     # Convert signal to numpy array
     if not isinstance(signal, np.ndarray):
-        signal = np.array(signal)
+        sig = np.array(signal).copy()
+    else:
+        sig = signal.copy()
 
     # Check that this signal is 1d array
-    if len(signal.shape) > 1:
-        raise ValueError('noisetools.ospl only supports 1d signal arrays.')
+    if sig.ndim > 1:
+        raise ValueError('noisetools.p2eq only supports 1d signal arrays.')
 
     # Apply the selected weighting
     if weighting is not None:
-        signal = weigh_signal(signal, fs, curve=weighting)
+        sig = weigh_signal(sig, fs, curve=weighting)
 
     # Determine the equivalent pressure
-    return 1 / signal.size * np.trapezoid(signal ** 2)
+    return 1 / sig.size * np.sum(sig ** 2)
 
 
 def ospl(signal: list | np.ndarray,
@@ -88,16 +118,45 @@ def ospl(signal: list | np.ndarray,
     Overall sound pressure level in dB (weighted to selected weighting)
 
     """
-    pe2 = equivalent_pressure(signal, fs, weighting, )
+    pe2 = p2eq(signal, fs, weighting, )
 
     return 10 * np.log10(pe2 / (2e-5 ** 2))
 
 
-def ospl_t_out(signal_size: int,
-               fs: int | float | np.number,
-               delta_t: float | np.number = 1.,
-               complete: bool = True,
+@deprecated
+def ospl_t_out(*args,
+               **kwargs,
                ) -> np.ndarray:
+    """
+    DEPRECATED
+
+    Calculate the matching time series for the ospl_t function.
+
+    Parameters
+    ----------
+    *args
+        See t_out.
+    **kwargs
+        See t_out.
+
+    Returns
+    -------
+    Time (seconds) at which the OSPL is calculated. Determined as the central timestamp
+        in the sections of length delta_t.
+    """
+    warnings.warn("The function 'ospl_t_out()' is renamed to 't_out'."
+                  "ospl_t_out will be removed in a future version of noisetools",
+                  DeprecationWarning
+                  )
+    return t_out(*args, **kwargs)
+
+
+def t_out(signal_size: int,
+          fs: int | float | np.number,
+          delta_t: float | np.number = 1.,
+          complete: bool = True,
+          centered: bool = True,
+          ) -> np.ndarray:
     """
     Calculate the matching time series for the ospl_t function.
 
@@ -113,6 +172,9 @@ def ospl_t_out(signal_size: int,
         In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
         calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
         in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
+    centered: bool, optional (default=True)
+        Centres the timestamps to the average time in each bin.
+        Effectively, this shifts the time indication to t + delta_t / 2.
 
     Returns
     -------
@@ -120,11 +182,76 @@ def ospl_t_out(signal_size: int,
         in the sections of length delta_t.
     """
     if complete:
-        t_out = np.arange(0, signal_size / fs, delta_t)
+        t_array = np.arange(0, signal_size / fs, delta_t)
     else:
-        t_out = np.arange(0, np.floor(signal_size / fs), delta_t)
+        t_array = np.arange(0, np.floor(signal_size / fs), delta_t)
 
-    return t_out + delta_t / 2
+    t_array = t_array + delta_t / 2 if centered else t_array
+
+    return t_array
+
+
+def p2eq_t(signal: list | np.ndarray,
+           fs: int | float | np.number,
+           weighting: str = None,
+           delta_t: float | np.number = 1.,
+           complete: bool = True,
+           ) -> float:
+    """
+    Calculate the equivalent pressure (Pe^2) over time, of the input sound signal.
+
+    Parameters
+    ----------
+    signal: array_like
+        Array with the digital signal.
+    fs: number
+        The sampling frequency of the digital signal
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
+    delta_t: float | np.number, optional (default=1.)
+        Desired timestep in the OSPL output, in seconds.
+    complete: bool, optional (default=True)
+        In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
+        calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
+        in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
+
+    Returns
+    -------
+    Equivalent pressure in Pa^2 (weighted to selected weighting) at the timestamps defined by delta_t.
+
+    """
+    # Convert signal to numpy array
+    if not isinstance(signal, np.ndarray):
+        sig = np.array(signal).copy()
+    else:
+        sig = signal.copy()
+
+    # Check that this signal is 1d array
+    if sig.ndim > 1:
+        raise ValueError('noisetools.p2eq_t only supports 1d signal arrays.')
+
+    # Apply the selected weighting
+    if weighting is not None:
+        sig = weigh_signal(sig, fs, curve=weighting)
+
+    # Determine the timestep length in terms of samples.
+    step = int(delta_t * fs)
+    # Determine the number of full timesteps to compute.
+    n_step = int(signal.size / step)
+
+    # Separate the remainder from the signal.
+    remainder = sig[n_step * step:]
+    sig = sig[:n_step * step]
+
+    # Integrate the signal per timestep.
+    sig = sig.reshape((n_step, -1))
+    pe2 = 1 / step * np.sum(sig ** 2, axis=1)
+
+    # Add the equivalent pressure of the remainder if required.
+    if complete and remainder.size > 0:
+        pe2 = np.append(pe2, 1 / remainder.size * np.sum(remainder ** 2))
+
+    return pe2
 
 
 def ospl_t(signal: list | np.ndarray,
@@ -156,30 +283,9 @@ def ospl_t(signal: list | np.ndarray,
     OPSL (dB) (weighted to selected weighting) at the timestamps defined by delta_t.
 
     """
-    # Convert signal to numpy array.
-    if not isinstance(signal, np.ndarray):
-        signal = np.array(signal)
+    pe2 = p2eq_t(signal, fs, weighting, delta_t, complete)
 
-    # Weight the full signal beforehand.
-    if weighting is not None:
-        signal = weigh_signal(signal, fs, weighting)
-
-    # Determine the timestep length in terms of samples.
-    step = int(delta_t * fs)
-    # Determine the number of timesteps to compute.
-    n_step = signal.size / step
-    if complete and int(n_step) < n_step:
-        n_step = int(n_step) + 1
-    else:
-        n_step = int(n_step)
-
-    # Initialise the output array.
-    ospl_out = np.zeros(n_step)
-    # Compute the OSPL per timestep using the ospl function. Note that weighting was done beforehand.
-    for ti in range(n_step):
-        ospl_out[ti] = ospl(signal[(ti * step):((ti + 1) * step)], fs, weighting=None)
-
-    return ospl_out
+    return 10 * np.log10(pe2 / (2e-5 ** 2))
 
 
 def octave_index(fs: int | float | np.number,
@@ -291,14 +397,28 @@ def octave_spectrogram(signal: list | np.ndarray,
         - ```df```: the octave band width (Hz)
 
     """
+    # Convert signal to numpy array
+    if not isinstance(signal, np.ndarray):
+        sig = np.array(signal).copy()
+    else:
+        sig = signal.copy()
+
+    # Check that this signal is 1d array
+    if sig.ndim > 1:
+        raise ValueError('noisetools.p2eq_t only supports 1d signal arrays.')
+
+    # Apply the selected weighting
+    if weighting is not None:
+        sig = weigh_signal(signal, fs, curve=weighting)
+
     out_index, octave = octave_index(fs, octave)
 
-    out_t = ospl_t_out(signal.size, fs, delta_t, complete=complete)
+    out_t = t_out(sig.size, fs, delta_t, complete=complete)
     out_spectrogram = pd.DataFrame(index=out_index, columns=out_t, dtype=float)
 
     for band_select in out_index.get_level_values('band'):
-        band_signal = octave.filter_signal(signal, fs, band_select)
-        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, weighting, delta_t, complete=complete)
+        band_signal = octave.filter_signal(sig, fs, band_select)
+        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, None, delta_t, complete=complete)
 
     return out_spectrogram
 

@@ -18,8 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ```octave_spectrum``` function to calculate an average SPL spectrum in octave bands, of a signal .
   - ```octave_spectrogram``` function to calculate SPL over time in octave bands, of a signal.
   - ```amplitude_modulation``` function to calculate the amplitude modulation depth, with the method by Bass et al. (2016).
-  - ```ospl_t_out``` function to obtain the timesteps matching the ```ospl_t``` function.
-
+  - ```t_out``` function to obtain the timesteps matching the ```ospl_t``` function.
+  - ```p2eq_t``` function to calculate equivalent pressure over time (similar to ```ospl_t```).
+  - 
 
 - ```wintaur``` module (configspec):
   - Added ```mech``` parameter to select the noise generation mechanism.
@@ -50,8 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **The variable ```t``` has been removed!!**
   - **The function no longer returns the time output!!** This has been separated into a new function ```ospl_t_out``` (see the **Added** section)
 
-
-[//]: # (### Deprecated)
+  
+### Deprecated
+- ```equivalent_pressure``` in ```sound_levels``` has been renamed to ```p2eq```.
+- Development function ```ospl_t_out``` in ```sound_levels``` renamed to ```t_out```
+- 
 
 [//]: # (### Removed)
 
