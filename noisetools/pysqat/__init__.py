@@ -35,7 +35,7 @@ except ImportError as e:
                       'Make sure you install noisetools[pysqat], to be able to use the PySQAT package.')
 
 
-SQAT_PATH = os.path.join(os.path.dirname(__file__), 'SQAT-1.2')
+SQAT_PATH = os.path.join(os.path.dirname(__file__), 'SQAT-1.3')
 
 
 class PySQAT:

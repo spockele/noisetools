@@ -96,7 +96,7 @@ limitations under the License.
 Technische Universiteit Delft hereby disclaims all copyright interest in the program “noisetools”, a Python toolbox for noise analysis in scientific research, written by the Author(s).<br>
 Henri Werij, Faculty of Aerospace Engineering, Technische Universiteit Delft.
 
-SQAT 1.2 [(available on GitHub)](https://github.com/ggrecow/SQAT) [[3](#greco2023)], is included in this work under the terms of the CC BY-NC 4.0 license.
+SQAT 1.3 [(available on GitHub)](https://github.com/ggrecow/SQAT) [[3](#greco2023)], is included in this work under the terms of the CC BY-NC 4.0 license.
 
 
 ## References

@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **The variable ```t``` has been removed!!**
   - **The function no longer returns the time output!!** This has been separated into a new function ```ospl_t_out``` (see the **Added** section)
 
+- ```pySQAT``` sub-package: SQAT updated to v1.3.
   
 ### Deprecated
 - ```equivalent_pressure``` in ```sound_levels``` has been renamed to ```p2eq```.
