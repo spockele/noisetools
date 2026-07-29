@@ -25,12 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```wintaur``` module (configspec):
   - Added ```mech``` parameter to select the noise generation mechanism.
   - Added ```seed``` parameter to set the seed for the random phase generator.
+  - Added ```rotor_diameter``` parameter to define the rotor diameter of the turbine.
+  - Added ```source_rr``` parameter to define the virtual source location as r/R.
 
 
 - ```hawc2``` module:
   - Added ```read_hawc2_aedata``` function to read the aerodynamic blade layout files for HAWC2.
   - ```numbered_columns``` optional parameter in ```read_hawc2_res()``` to replicate old column name behaviour.
-  - Updated logic to read final column of the sel file in ```read_hawc2_res()```.
 
 - ```PySQAT``` sub-package:
   - Added the optional ```overwrite``` variable to the ```process_directory``` functions, so it doesn't do double work after an interruption.
@@ -52,9 +53,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```ospl_t``` function in ```sound_levels``` module:
   - Changed the method for splitting in timesteps. This has significantly improved compute times for this function.
   - **The variable ```t``` has been removed!!**
-  - **The function no longer returns the time output!!** This has been separated into a new function ```ospl_t_out``` (see the **Added** section)
+  - **The function no longer returns the time output!!** This has been separated into a new function ```t_out``` (see the **Added** section)
 
 - ```pySQAT``` sub-package: SQAT updated to v1.3.
+
+- ```hawc2``` module:
+  - Updated logic to read final column of the sel file in ```read_hawc2_res()```.
+  
   
 ### Deprecated
 - ```equivalent_pressure``` in ```sound_levels``` has been renamed to ```p2eq```.
