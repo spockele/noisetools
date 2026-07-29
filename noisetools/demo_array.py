@@ -36,21 +36,30 @@ class ArrayData:
 
     Attributes
     ----------
+    directory: str
+        Directory where the tdms data of this instance is located.
     fs: float
-
+        Data sampling frequency from the info file.
     n_mic: int
-
+        Number of microphones from the info file.
     start_time: int
-
+        Start time of the recording from the info file. (seconds since epoch)
     start_timestamp: datetime.datetime
-
-    length: float
-
+        Timestamp corresponding to the start_time.
     comments: str
-
+        Comments from the info file.
     read: bool
-
+        Indicates whether the TDMS file data has been read or not.
+    open: bool
+        Indicates whether the TdmsFile instance had the TDMS file open or not.
     tdms: TdmsFile
+        Instance of TdmsFile containing the file that is opened in this instance of ArrayData.
+    length: int
+        Data length in number of samples.
+    duration: float
+        Data length in seconds.
+    time: pandas.Index
+        Time series index for the array data.
     """
     calibration = pd.read_csv(os.path.join(os.path.dirname(__file__), 'array_calibration.csv'),
                               index_col=(0, 1, 2, 3, ),
@@ -63,14 +72,14 @@ class ArrayData:
                  configuration: Literal['normal', 'ge_exp'] = 'normal',
                  calibration_unit: Literal['dB', 'nd'] = 'nd',
                  ) -> None:
-
+        # Read the normal calibration file.
         if configuration == 'normal':
             select = self.calibration.index.get_level_values('connector') == self.calibration.index.get_level_values('microphone')
             self.calibration = self.calibration.loc[select, :]
             self.calibration.index = self.calibration.index.droplevel('microphone')
             self.uncertainty = self.calibration.loc[(slice(None), calibration_unit, 'uncertainty'), :]
             self.calibration = self.calibration.loc[(slice(None), calibration_unit, 'calibration')]
-
+        # Read the calibration file corresponding to the ground effect experiment from December 2026.
         elif configuration == 'ge_exp':
             select1 = self.calibration.index.get_level_values('connector') != self.calibration.index.get_level_values('microphone')
             select2 = self.calibration.index.get_level_values('connector') <= 32
@@ -78,14 +87,16 @@ class ArrayData:
             self.calibration.index = self.calibration.index.droplevel('microphone')
             self.uncertainty = self.calibration.loc[(slice(None), calibration_unit, 'uncertainty'), :]
             self.calibration = self.calibration.loc[(slice(None), calibration_unit, 'calibration')]
-
+        # Don't read a calibration file, in order to do the calibration with this tdms file.
         elif configuration == 'calibration':
             self.calibration = None
 
+        # Store the directory location and read the info file.
         self.directory = os.path.abspath(directory)
         with open(os.path.join(self.directory, 'info.txt')) as f:
             lines = f.readlines()
 
+        # Parse the information lines
         lines = [line.replace('\n', '').split() for line in lines]
         lines = {line[0]: line[1:] for line in lines}
 
@@ -96,6 +107,7 @@ class ArrayData:
                                                  '%d/%m/%Y %H:%M:%S.%f')
         self.comments = ' '.join(lines['comments'])
 
+        # Read or open the actual tdms file with the data.
         self.read = read
         self.open = True
 
@@ -106,6 +118,7 @@ class ArrayData:
             self.tdms = TdmsFile.open(os.path.join(self.directory, 'acoustic_data.tdms'))
             dat = self.tdms['Microphones Data'][f'Microphone 1'][:] * 1.57 / (2 ** (16 - 1)) / (12.589 / 1e3)
 
+        # Set the data length and the time array.
         self.length = dat.size
         self.duration = self.length / self.fs
         self.time = pd.Index(np.linspace(0, self.duration, self.length, endpoint=False), name='t (s)')
@@ -122,7 +135,7 @@ class ArrayData:
 
     def tdms_open(self) -> None:
         """
-
+        Open the tdms file instance.
         """
         if not self.open:
             self.open = True
@@ -130,7 +143,7 @@ class ArrayData:
 
     def tdms_read(self) -> None:
         """
-
+        Read the tdms file.
         """
         if not self.read:
             self.open = True
