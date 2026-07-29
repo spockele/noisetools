@@ -23,6 +23,7 @@
     wdir = float_list(min=3, max=3, default=list(0., 0., 0.))
     ti = float(min=0., max=100.)
     z0 = float(min=1e-12, default=1.0)
+
     bldata = string()
 
 [observers]

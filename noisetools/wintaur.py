@@ -17,6 +17,7 @@
 
 from configobj import ConfigObj, flatten_errors, get_extra_values
 from configobj.validate import Validator, VdtMissingValue
+from typing import Literal
 import warnings
 import os
 
@@ -157,13 +158,15 @@ class WinTAurProject:
                  pres: float = 101325.,
                  dens: float = 1.225,
                  humi: float = 80.,
-                 grnd: str = 'grass',
+                 grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'] = 'grass',
                  run: bool = False,
                  base_htc: str = None,
                  time: tuple[float] = None,
                  simulation_dt: float = .01,
                  noise_dt: float = .5,
                  hub_height: float = None,
+                 rotor_diameter: float = None,
+                 source_rr: float= 0.85,
                  ws: float = None,
                  shear: list[int | float] = (3, 0.2),
                  wdir: list[float] = (0., 0., 0.),
@@ -171,6 +174,8 @@ class WinTAurProject:
                  z0: float = 1.0,
                  bldata: str = None,
                  observers: list[list[str | float]] = None,
+                 seed: int = 123456,
+                 mech: Literal['All', 'TI', 'TE', 'ST', 'TP', 'Full'] = 'All',
                  fs: int = 48000,
                  overlap: int = 3
                  ) -> None:
@@ -183,7 +188,7 @@ class WinTAurProject:
             Name of the case file as a path relative to the project folder. Without the .aurlite file extension.
 
         Conditions Parameters
-        ---
+
         temp: float, optional (default = 15.)
             Atmospheric temperature used for atmospheric attenuation.
             Default value  is ISA temperature at 0m [1]_ .
@@ -200,7 +205,7 @@ class WinTAurProject:
             Ground type used for the ground effect calculation.
 
         HAWC2 Parameters
-        ---
+
         run: bool, optional (default = False)
             Indication to run the HAWC2 simulation.
         base_htc: str, optional (default = None)
@@ -215,9 +220,16 @@ class WinTAurProject:
         noise_dt: float, optional (default = 0.5)
             Time step for the HAWC2 turbine noise calculations.
             Optional parameter when run = True.
+
         hub_height: float, optional (default = None)
             Hub height of the wind turbine.
             Required parameter when run = True.
+        rotor_diameter: float, optional (default = None)
+            Rotor diameter of the wind turbine.
+            Required parameter when run = True.
+        source_rr: float, optional (default = 0.85)
+            Location of the virtual source to calculate the propagation corrections. This defined in terms of r/R.
+
         ws: float, optional (default = None)
             Mean wind speed for the HAWC2 simulation.
             Required parameter when run = True.
@@ -233,20 +245,25 @@ class WinTAurProject:
         z0: float, optional (default = None)
             Blade surface roughness z0 (see HAWC2 manual (aero_noise -> surface_roughness) for more information [3]_).
             Required parameter when run = True.
+
         bldata: str, optional (default = None)
             Filename of the boundary layer data file, relative to the project path.
             Required parameter when run = True.
 
         Observer parameters
-        ---
+
         observers: list[list[str | float]], optional (default = None)
             List of observation points in the HAWC2 global coordinate system.
             Each point is a list containing: [name string, x, y, z].
             Required parameter when run = True.
 
         Reconstruction parameters
-        ---
-        fs: int, optional (default = 44100)
+
+        seed: int, optional (default = 123456)
+            Seed for the random phase in the signal reconstruction. Should be integer larger than or equal to 0.
+        mech: Literal['All', 'TI', 'TE', 'ST', 'TP', 'Full'], optional (default = 'All')
+	        Defines the noise generation mechanism(s) to auralise ('All', 'TI', 'TE', 'ST', 'TP', 'Full').
+        fs: int, optional (default = 48000)
             Sampling frequency of the output wav files.
         overlap: int, optional (default = 3)
             Amount of overlap in the inverse short-time Fourier transform.
@@ -281,7 +298,11 @@ class WinTAurProject:
             new_case['hawc2_noise']['time'] = time
             new_case['hawc2_noise']['simulation_dt'] = simulation_dt
             new_case['hawc2_noise']['noise_dt'] = noise_dt
+
             new_case['hawc2_noise']['hub_height'] = hub_height
+            new_case['hawc2_noise']['rotor_diameter'] = rotor_diameter
+            new_case['hawc2_noise']['source_rr'] = source_rr
+
             new_case['hawc2_noise']['ws'] = ws
             new_case['hawc2_noise']['shear'] = shear
             new_case['hawc2_noise']['wdir'] = wdir
@@ -299,6 +320,8 @@ class WinTAurProject:
 
         # Add the reconstruction parameters.
         new_case['reconstruction'] = {}
+        new_case['reconstruction']['seed'] = seed
+        new_case['reconstruction']['mech'] = mech
         new_case['reconstruction']['fs'] = fs
         new_case['reconstruction']['overlap'] = overlap
 
