@@ -181,11 +181,23 @@ def t_out(signal_size: int,
     Time (seconds) at which the OSPL is calculated. Determined as the central timestamp
         in the sections of length delta_t.
     """
-    if complete:
-        t_array = np.arange(0, signal_size / fs, delta_t)
-    else:
-        t_array = np.arange(0, np.floor(signal_size / fs), delta_t)
+    # Determine the timestep length in terms of samples.
+    step = int(delta_t * fs)
+    # Determine the number of full timesteps to compute.
+    n_step = int(signal_size / step)
+    # Initialise the time array by defining the time indices.
+    t_array = np.linspace(0, n_step * step, n_step, dtype=int)
 
+    # Determine the remainder size.
+    remainder_size = signal_size - n_step * step
+    # Add extra step if there is a remainder.
+    if complete and remainder_size > 0:
+        t_array = np.append(t_array, (n_step + 1) * step)
+
+    # Convert time array from samples to seconds.
+    t_array = t_array.astype(float) / fs
+
+    # Shift to center the time values, if desired.
     t_array = t_array + delta_t / 2 if centered else t_array
 
     return t_array
