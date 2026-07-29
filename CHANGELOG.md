@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```hawc2``` module:
   - Added ```read_hawc2_aedata``` function to read the aerodynamic blade layout files for HAWC2.
   - ```numbered_columns``` optional parameter in ```read_hawc2_res()``` to replicate old column name behaviour.
-
+  - Updated logic to read final column of the sel file in ```read_hawc2_res()```.
 
 - ```PySQAT``` sub-package:
   - Added the optional ```overwrite``` variable to the ```process_directory``` functions, so it doesn't do double work after an interruption.
