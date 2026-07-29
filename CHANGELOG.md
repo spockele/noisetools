@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.2.0] - 29 July 2026
+Major update with many added tools and functions. 
+
+**NOT backwards compatible with v0.1.0.**
 
 ### Added
 - ```OctaveBand``` class in ```octave_band``` module:
@@ -20,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ```amplitude_modulation``` function to calculate the amplitude modulation depth, with the method by Bass et al. (2016).
   - ```t_out``` function to obtain the timesteps matching the ```ospl_t``` function.
   - ```p2eq_t``` function to calculate equivalent pressure over time (similar to ```ospl_t```).
-  - 
+
 
 - ```wintaur``` module (configspec):
   - Added ```mech``` parameter to select the noise generation mechanism.
@@ -32,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```hawc2``` module:
   - Added ```read_hawc2_aedata``` function to read the aerodynamic blade layout files for HAWC2.
   - ```numbered_columns``` optional parameter in ```read_hawc2_res()``` to replicate old column name behaviour.
+
 
 - ```PySQAT``` sub-package:
   - Added the optional ```overwrite``` variable to the ```process_directory``` functions, so it doesn't do double work after an interruption.
@@ -55,25 +59,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **The variable ```t``` has been removed!!**
   - **The function no longer returns the time output!!** This has been separated into a new function ```t_out``` (see the **Added** section)
 
+
 - ```pySQAT``` sub-package: SQAT updated to v1.3.
 
+
 - ```hawc2``` module:
-  - Updated logic to read final column of the sel file in ```read_hawc2_res()```.
-  
-  
+  - Updated logic to read the whole final column of the sel file in ```read_hawc2_res()```.
+
+
 ### Deprecated
 - ```equivalent_pressure``` in ```sound_levels``` has been renamed to ```p2eq```.
 - Development function ```ospl_t_out``` in ```sound_levels``` renamed to ```t_out```
-- 
 
-[//]: # (### Removed)
 
 ### Fixed
 - Time compensation of the OSPL function was wrong when ```t``` was not provided. Changed the integration to use the discrete signal length instead.
 - Constant extrapolation in ```OctaveBand.interp1d_to_narrowband``` resulted in zeroes outside the band range, which was not desired behaviour.
 - Time array in ```wavfile.WavFile``` included the end time, which resulted in a slightly offset sampling frequency of this array.
 
-## [v0.1.0]
+
+
+## [v0.1.0] - 8 July 2025
 Public version of this repository. No functional differences from v0.0.3.
 
 
@@ -100,7 +106,7 @@ Public version of this repository. No functional differences from v0.0.3.
 - Default sampling frequency of WinTAur Lite output changed to 48 kHz to match ```SQAT```.
 
 ### Removed
-- Removed the ```tone_generation``` module, because it was not very usefull.
+- Removed the ```tone_generation``` module, because it was not very useful.
 
 
 ## [v0.0.2]
@@ -120,7 +126,7 @@ Public version of this repository. No functional differences from v0.0.3.
 - Switching to a slightly different semantic versioning number to move away from the '-dev0' notation that is just hideous.
 
 
-## [v.0.1.0-dev0]
+## [Unreleased pre-pre-release version]
 Very first version. Very pre-release...
 This is a composition of a collection of functions from my MSc. Thesis, that were used for signal analysis. Also some functions developed to comply with the noise analysis standards in IEC 61400-11:2012.
 
