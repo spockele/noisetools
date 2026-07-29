@@ -201,7 +201,7 @@ class WinTAurProject:
         humi: float, optional (default = 80.)
             Atmospheric relative humidity used for atmospheric attenuation
             Default value is based on KNMI climate information [2]_ .
-        grnd: str, optional (default = 'grass')
+        grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'], optional (default = 'grass')
             Ground type used for the ground effect calculation.
 
         HAWC2 Parameters
@@ -211,7 +211,7 @@ class WinTAurProject:
         base_htc: str, optional (default = None)
             Name of the base htc input file, which defines the turbine structure, aerodynamics, and control.
             Required parameter when run = True.
-        time: list[float], optional (default = None)
+        time: tuple[float, float], optional (default = None)
             Start and end time for the HAWC2 noise calculations.
             Required parameter when run = True.
         simulation_dt: float, optional (default = 0.01)
@@ -233,10 +233,10 @@ class WinTAurProject:
         ws: float, optional (default = None)
             Mean wind speed for the HAWC2 simulation.
             Required parameter when run = True.
-        shear: list[int | float], optional (default = (3, 0.2))
+        shear: tuple[int, float], optional (default = (3, 0.2))
             Wind shear parameters (see HAWC2 manual (wind -> shear_format) for more information [3]_).
             Optional parameter when run = True.
-        wdir: list[float], optional (default = (0., 0., 0.)
+        wdir: tuple[float, float, float], optional (default = (0., 0., 0.)
             Wind direction input (see HAWC2 manual (wind -> windfield_rotations) for more information [3]_).
             Optional parameter when run = True.
         ti: float, optional (default = None)
@@ -252,7 +252,7 @@ class WinTAurProject:
 
         Observer parameters
 
-        observers: list[list[str | float]], optional (default = None)
+        observers: tuple[tuple[str | float]], optional (default = None)
             List of observation points in the HAWC2 global coordinate system.
             Each point is a list containing: [name string, x, y, z].
             Required parameter when run = True.
