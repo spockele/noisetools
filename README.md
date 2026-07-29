@@ -15,6 +15,18 @@ LinkedIn: [Josephine Pockelé](https://www.linkedin.com/in/josephine-pockele)
 
 The primary component of this repository is the *noisetools* package. Wheels and tarballs of this package are included in the GitHub releases.
 
+- ***demo_array.py***
+
+    Module to work with the TDMS data from the custom array of the TU Delft Aerospace Engineering, Operations and Environment section.
+    
+    The file **array_calibration.csv** contains a per-microphone calibration dataset in both dB and Pa/Pa.
+
+
+- ***hawc2.py***
+
+    Module with functions to interact with [HAWC2](http://www.hawc2.dk/).
+
+
 - ***octave_band.py***
 
     Module containing a class to handle operations with octave band sound/attenuation/amplification spectra.
@@ -41,16 +53,13 @@ The primary component of this repository is the *noisetools* package. Wheels and
 
 - ***wintaur.py***
 
-    Functions to make working with WinTAur Lite easier. Currently compatible with latest version.
+    Functions to interact with WinTAur Lite (Not publicly available yet).
+    
+    The file **configspec.aurlite** contains the required file structure of the input files.
 
 
-- ***hawc2.py***
-
-    Module with functions to interact with [HAWC2](http://www.hawc2.dk/).
-
-
-### pySQAT
-Translation layer to run SQAT in Python. This sub-package includes a licensed copy of SQAT v1.2 [[3](#greco2023)].
+### pySQAT sub-package
+Translation layer to run SQAT in Python. This sub-package includes a licensed copy of SQAT v1.3 [[3](#greco2023)].
 
 IMPORTANT: to use pySQAT, and the required [matlabengine](https://pypi.org/project/matlabengine/) package, an activated installation of [MATLAB](https://www.mathworks.com/products/matlab.html) is required.\
 The authors recommend manually installing the matlabengine version compatible with your MATLAB and Python versions. See the [PyPI: matlabengine version history](https://pypi.org/project/matlabengine/#history) for more information about compatibility of the releases.
