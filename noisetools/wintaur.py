@@ -154,26 +154,42 @@ class WinTAurProject:
 
     def new_case(self,
                  case_name: str,
+                 rotor_diameter: float,
+                 hub_diameter: float,
+
                  temp: float = 15.,
                  pres: float = 101325.,
                  dens: float = 1.225,
                  humi: float = 80.,
                  grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'] = 'grass',
+
                  run: bool = False,
                  base_htc: str | None = None,
+                 rm_spl_files: bool = True,
+
                  time: tuple[float, float] | None = None,
                  simulation_dt: float = .01,
                  noise_dt: float = .5,
+
                  hub_height: float | None = None,
-                 rotor_diameter: float | None = None,
-                 source_rr: float= 0.85,
+
                  ws: float | None = None,
                  shear: tuple[int, float] = (3, 0.2),
                  wdir: tuple[float, float, float] = (0., 0., 0.),
                  ti: float | None = None,
                  z0: float = 1.0,
+
                  bldata: str | None = None,
+                 aerosections: int = 30,
+                 aero_distribution: Literal['linear', 'cosine'] = 'cosine',
+
+                 mode: Literal['point', 'distribute', 'constant'] = 'point',
+                 constant: float = 0.,
+                 source_rr: float= 0.85,
+                 n_sources: int = 31,
+
                  observers: tuple[tuple[str, float, float, float]] | None = None,
+
                  seed: int = 123456,
                  mech: Literal['All', 'TI', 'TE', 'ST', 'TP', 'Full'] = 'All',
                  fs: int = 48000,
@@ -186,8 +202,14 @@ class WinTAurProject:
         ----------
         case_name: str | os.PathLike
             Name of the case file as a path relative to the project folder. Without the .aurlite file extension.
+        rotor_diameter: float
+            Rotor diameter of the wind turbine used to calculate the propagation effects. Always required to enable
+            compatibility between multiple auralisations from the same HAWC2 results!
+        hub_diameter: float
+            Rotor hub diameter of the wind turbine used to calculate the propagation effects. Always required to enable
+            compatibility between multiple auralisations from the same HAWC2 results!
 
-        Conditions Parameters
+        [conditions] Parameters
 
         temp: float, optional (default = 15.)
             Atmospheric temperature used for atmospheric attenuation.
@@ -204,60 +226,78 @@ class WinTAurProject:
         grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'], optional (default = 'grass')
             Ground type used for the ground effect calculation.
 
-        HAWC2 Parameters
+        [hawc2_noise] Parameters
 
         run: bool, optional (default = False)
             Indication to run the HAWC2 simulation.
         base_htc: str, optional (default = None)
             Name of the base htc input file, which defines the turbine structure, aerodynamics, and control.
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
+        rm_spl_files: bool, optional (default = True)
+            Triggers the removal of unused SPL output files from HAWC2 aero_noise.
+
         time: tuple[float, float], optional (default = None)
             Start and end time for the HAWC2 noise calculations.
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
         simulation_dt: float, optional (default = 0.01)
             Time step for the HAWC2 turbine aeroelastic simulation.
-            Optional parameter when run = True.
+            Optional parameter when ``[hawc2_noise] run=True``.
         noise_dt: float, optional (default = 0.5)
             Time step for the HAWC2 turbine noise calculations.
-            Optional parameter when run = True.
+            Optional parameter when ``[hawc2_noise] run=True``.
 
         hub_height: float, optional (default = None)
             Hub height of the wind turbine.
-            Required parameter when run = True.
-        rotor_diameter: float, optional (default = None)
-            Rotor diameter of the wind turbine.
-            Required parameter when run = True.
-        source_rr: float, optional (default = 0.85)
-            Location of the virtual source to calculate the propagation corrections. This defined in terms of r/R.
+            Required parameter when ``[hawc2_noise] run=True``.
 
         ws: float, optional (default = None)
             Mean wind speed for the HAWC2 simulation.
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
         shear: tuple[int, float], optional (default = (3, 0.2))
             Wind shear parameters (see HAWC2 manual (wind -> shear_format) for more information [3]_).
-            Optional parameter when run = True.
+            Optional parameter when ``[hawc2_noise] run=True``.
         wdir: tuple[float, float, float], optional (default = (0., 0., 0.)
             Wind direction input (see HAWC2 manual (wind -> windfield_rotations) for more information [3]_).
-            Optional parameter when run = True.
+            Optional parameter when ``[hawc2_noise] run=True``.
         ti: float, optional (default = None)
             Turbulence intensity in percent for the HAWC2 simulation.
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
         z0: float, optional (default = None)
             Blade surface roughness z0 (see HAWC2 manual (aero_noise -> surface_roughness) for more information [3]_).
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
 
         bldata: str, optional (default = None)
             Filename of the boundary layer data file, relative to the project path.
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
+        aerosections: int, optional (default = 30)
+            Defines the number of HAWC2 aerodynamic calculation points.
+        aero_distribution: Literal['linear', 'cosine'], optional (default = 'cosine')
+            Distribution method of HAWC2 aerodynamic calculation points
 
-        Observer parameters
+        [propagation] parameters
+
+        mode: Literal['point', 'distribute', 'constant'], optional (default = 'point')
+            Mode selector for the propagation effects calculation
+                - point: uses a single point source per blade. This mode uses ``source_rr`` to set the position of
+                    the point source.
+                - distribute: uses an assumed source power distribution with multiple point sources. This mode uses
+                    ``n_sources`` to set the number of point sources to use.
+                - constant: bypasses the propagation code and adds a flat amplification of ``constant`` decibels.
+        constant: float, optional (default = 0.)
+            Defines in decibel the flat amplification when ``mode='constant'``.
+        source_rr: float, optional (default = 0.85)
+            Location of the virtual source to calculate the propagation corrections. This defined in terms of r/R.
+        n_sources: int, optional (default = 31)
+            Number of point sources used when ``mode='distribute'``.
+
+        [observers] parameters
 
         observers: tuple[tuple[str | float]], optional (default = None)
             List of observation points in the HAWC2 global coordinate system.
             Each point is a list containing: [name string, x, y, z].
-            Required parameter when run = True.
+            Required parameter when ``[hawc2_noise] run=True``.
 
-        Reconstruction parameters
+        [reconstruction] parameters
 
         seed: int, optional (default = 123456)
             Seed for the random phase in the signal reconstruction. Should be integer larger than or equal to 0.
@@ -295,20 +335,30 @@ class WinTAurProject:
             new_case['hawc2_noise'] = {}
             new_case['hawc2_noise']['run'] = run
             new_case['hawc2_noise']['base_htc'] = base_htc
+            new_case['hawc2_noise']['rm_spl_files'] = rm_spl_files
+
             new_case['hawc2_noise']['time'] = time
             new_case['hawc2_noise']['simulation_dt'] = simulation_dt
             new_case['hawc2_noise']['noise_dt'] = noise_dt
 
             new_case['hawc2_noise']['hub_height'] = hub_height
-            new_case['hawc2_noise']['rotor_diameter'] = rotor_diameter
-            new_case['hawc2_noise']['source_rr'] = source_rr
-
             new_case['hawc2_noise']['ws'] = ws
             new_case['hawc2_noise']['shear'] = shear
             new_case['hawc2_noise']['wdir'] = wdir
             new_case['hawc2_noise']['ti'] = ti
             new_case['hawc2_noise']['z0'] = z0
+
             new_case['hawc2_noise']['bldata'] = bldata
+            new_case['hawc2_noise']['aerosections'] = aerosections
+            new_case['hawc2_noise']['aero_distribution'] = aero_distribution
+
+        # Add the propagation parameters.
+        new_case['propagation']['mode'] = mode
+        new_case['propagation']['constant'] = constant
+        new_case['propagation']['rotor_diameter'] = rotor_diameter
+        new_case['propagation']['hub_diameter'] = hub_diameter
+        new_case['propagation']['source_rr'] = source_rr
+        new_case['propagation']['n_sources'] = n_sources
 
         # Add the observer locations if they are defined.
         if observers is not None:

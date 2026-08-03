@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [v0.2.1] - UNRELEASED
+
+### Added
+- ```wintaur``` module: new parameters in the configspec:
+  - ```[hawc2_noise] aerosections```: the number of HAWC2 aerodynamic calculation points.
+  - ```[hawc2_noise] aero_distribution```: the distribution method of HAWC2 aerodynamic calculation points.
+  - New section: ```[propagation]```
+  - ```[propagation] mode```: selects the mode of calculating the propagation effects.
+  - ```[propagation] constant```: sets the constant *x dB* amplification if ```mode = 'constant'```. 
+  - ```[propagation] hub_diameter```: the rotor diameter used for the propagation effect calculations.
+  - ```[propagation] n_sources```: the number of point sources used when ```mode = 'distribute```.
+
+### Changed
+- ```wintaur``` module: changed parameters in the configspec:
+  - Moved ```rotor_diameter``` from ```[hawc2_noise]``` to ```[propagation]```
+  - Moved ```source_rr``` from ```[hawc2_noise]``` to ```[propagation]```
+
+
 ## [v0.2.0] - 29 July 2026
 Major update with many added tools and functions. 
 
@@ -76,7 +95,6 @@ Major update with many added tools and functions.
 - Time compensation of the OSPL function was wrong when ```t``` was not provided. Changed the integration to use the discrete signal length instead.
 - Constant extrapolation in ```OctaveBand.interp1d_to_narrowband``` resulted in zeroes outside the band range, which was not desired behaviour.
 - Time array in ```wavfile.WavFile``` included the end time, which resulted in a slightly offset sampling frequency of this array.
-
 
 
 ## [v0.1.0] - 8 July 2025

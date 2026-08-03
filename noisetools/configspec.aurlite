@@ -9,15 +9,12 @@
     run = boolean(default=False)
     base_htc = string()
     rm_spl_files = boolean(default=True)
-    time = float_list(min=2, max=2)
 
+    time = float_list(min=2, max=2)
     simulation_dt = float(min=1e-12, default=0.01)
     noise_dt = float(min=1e-12, default=0.5)
 
     hub_height = float(min=0.)
-    rotor_diameter = float(min=0.)
-    source_rr = float(min=0., max=1., default=0.85)
-
     ws = float(min=0.)
     shear = float_list(min=2, max=2, default=list(3, 0.2))
     wdir = float_list(min=3, max=3, default=list(0., 0., 0.))
@@ -25,6 +22,16 @@
     z0 = float(min=1e-12, default=1.0)
 
     bldata = string()
+    aerosections = integer(min=1, default=30)
+    aero_distribution = option('linear', 'cosine', default='cosine')
+
+[propagation]
+	mode = option('point', 'distribute', 'constant', default='point')
+	constant = float(default=0)
+    rotor_diameter = float(min=0., )
+    hub_diameter = float(min=0., )
+    source_rr = float(min=0., max=1., default=0.85)
+    n_sources = integer(min=3, default=31)
 
 [observers]
     [[__many__]]
