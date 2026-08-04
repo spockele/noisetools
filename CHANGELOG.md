@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [v0.2.1] - UNRELEASED
+## [v0.2.1.dev1] - 4 August 2026
 
 ### Added
 - ```wintaur``` module: new parameters in the configspec:
@@ -101,7 +101,7 @@ Major update with many added tools and functions.
 Public version of this repository. No functional differences from v0.0.3.
 
 
-## [v0.0.3]
+## [v0.0.3] - 13 May 2025
 
 ### Added
 - ```wavfile``` module with ```WavFile``` class.\
@@ -127,14 +127,14 @@ Public version of this repository. No functional differences from v0.0.3.
 - Removed the ```tone_generation``` module, because it was not very useful.
 
 
-## [v0.0.2]
+## [v0.0.2] - 8 January 2025
 ### Added
 - Addition of WinTAur Lite code to noisetools.
   - Main goal: allow for easy creation and modification of ```.aurlite``` files outside WinTAur.
   - Includes Case and Project classes, without the ```.run()``` functions.
 
 
-## [v0.0.1]
+## [v0.0.1] - 3 January 2025
 
 ### Added
 - Addition of the CHANGELOG :)
@@ -144,7 +144,7 @@ Public version of this repository. No functional differences from v0.0.3.
 - Switching to a slightly different semantic versioning number to move away from the '-dev0' notation that is just hideous.
 
 
-## [Unreleased pre-pre-release version]
+## [v0.0.1.dev0] - 27 August 2024
 Very first version. Very pre-release...
 This is a composition of a collection of functions from my MSc. Thesis, that were used for signal analysis. Also some functions developed to comply with the noise analysis standards in IEC 61400-11:2012.
 

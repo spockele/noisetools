@@ -5,7 +5,8 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name='noisetools'
-version='0.2.0'
+# TODO: Keep pre number up-to-date!!
+version='0.2.1.dev1'
 description='A Python toolbox with all the signal analysis and research tools for my PhD.'
 readme='README.md'
 license = 'Apache-2.0 AND CC-BY-NC-4.0'
