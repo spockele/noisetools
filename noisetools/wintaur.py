@@ -353,6 +353,7 @@ class WinTAurProject:
             new_case['hawc2_noise']['aero_distribution'] = aero_distribution
 
         # Add the propagation parameters.
+        new_case['propagation'] = {}
         new_case['propagation']['mode'] = mode
         new_case['propagation']['constant'] = constant
         new_case['propagation']['rotor_diameter'] = rotor_diameter
