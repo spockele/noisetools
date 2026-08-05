@@ -186,13 +186,13 @@ def t_out(signal_size: int,
     # Determine the number of full timesteps to compute.
     n_step = int(signal_size / step)
     # Initialise the time array by defining the time indices.
-    t_array = np.linspace(0, n_step * step, n_step, dtype=int)
+    t_array = np.linspace(0, n_step * step, n_step, dtype=int, endpoint=False)
 
     # Determine the remainder size.
     remainder_size = signal_size - n_step * step
     # Add extra step if there is a remainder.
     if complete and remainder_size > 0:
-        t_array = np.append(t_array, (n_step + 1) * step)
+        t_array = np.append(t_array, n_step * step)
 
     # Convert time array from samples to seconds.
     t_array = t_array.astype(float) / fs

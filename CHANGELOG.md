@@ -28,7 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [//]: # (### Removed)
 
-[//]: # (### Fixed)
+### Fixed
+
+- ```sound_levels``` module:
+  - The time delta of ```t_out()``` mismatched the parameter ```delta_t``` by one sample step. This has been rectified.
+  
 
 [//]: # (### Security)
 
