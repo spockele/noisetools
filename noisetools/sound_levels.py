@@ -60,7 +60,7 @@ def equivalent_pressure(*args,
 
 def p2eq(signal: list | np.ndarray,
          fs: int | float | np.number,
-         weighting: str = None,
+         weighting: str | None = None,
          ) -> float:
     """
     Calculate the equivalent pressure (Pe^2) of the input sound signal.
@@ -99,7 +99,7 @@ def p2eq(signal: list | np.ndarray,
 
 def ospl(signal: list | np.ndarray,
          fs: int | float | np.number,
-         weighting: str = None,
+         weighting: str | None = None,
          ) -> float:
     """
     Calculate the Overall Sound Pressure Level of the input sound signal.
@@ -205,10 +205,10 @@ def t_out(signal_size: int,
 
 def p2eq_t(signal: list | np.ndarray,
            fs: int | float | np.number,
-           weighting: str = None,
+           weighting: str | None = None,
            delta_t: float | np.number = 1.,
            complete: bool = True,
-           ) -> float:
+           ) -> np.ndarray:
     """
     Calculate the equivalent pressure (Pe^2) over time, of the input sound signal.
 
@@ -268,7 +268,7 @@ def p2eq_t(signal: list | np.ndarray,
 
 def ospl_t(signal: list | np.ndarray,
            fs: int | float | np.number,
-           weighting: str = None,
+           weighting: str | None = None,
            delta_t: float | np.number = 1.,
            complete: bool = True,
            ) -> np.ndarray:
@@ -301,7 +301,7 @@ def ospl_t(signal: list | np.ndarray,
 
 
 def octave_index(fs: int | float | np.number,
-                 octave: OctaveBand = None,
+                 octave: OctaveBand | None = None,
                  ) -> tuple[pd.MultiIndex, OctaveBand]:
     """
     Set up the OctaveBand instance and create the MultiIndex for the octave band OSPL functions.
@@ -336,8 +336,8 @@ def octave_index(fs: int | float | np.number,
 
 def octave_spectrum(signal: list | np.ndarray,
                     fs: int | float | np.number,
-                    weighting: str = None,
-                    octave: OctaveBand = None,
+                    weighting: str | None = None,
+                    octave: OctaveBand | None = None,
                     ) -> pd.Series:
     """
     Calculate the OSPL of a signal per octave band.
@@ -375,9 +375,9 @@ def octave_spectrum(signal: list | np.ndarray,
 
 def octave_spectrogram(signal: list | np.ndarray,
                        fs: int | float | np.number,
-                       weighting: str = None,
+                       weighting: str | None = None,
                        delta_t: float | np.number = 1.,
-                       octave: OctaveBand = None,
+                       octave: OctaveBand | None = None,
                        complete: bool = True,
                        ) -> pd.DataFrame:
     """
