@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [v0.2.1.dev2] - UNRELEASED
+
+### Added
+
+- ```WavFile``` class:
+  - ```from_one_channel()``` function to create a new WavFile instance from a mono signal array, similar to ```from_two_channel()```.
+
+
+### Changed
+
+- ```WavFile``` class:
+  - Changed typehint of ```pcm``` parameter to a Literal with the accepted values.
+  - Move the ```pcm_table``` to the class itself, as it is only useful for ```WavFile.__init__()```
+
+
+[//]: # (### Deprecated)
+
+[//]: # (### Removed)
+
+[//]: # (### Fixed)
+
+[//]: # (### Security)
+
+
 ## [v0.2.1.dev1] - 4 August 2026
 
 ### Added

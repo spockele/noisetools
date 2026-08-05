@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import scipy.signal as spsig
+from typing import Literal
 import scipy.io as spio
 import numpy as np
 import warnings
@@ -23,11 +24,6 @@ import os
 
 
 __all__ = ['WavFile', ]
-pcm_table = {'s32': (-2147483648, +2147483647, np.int32),
-             's24': (-2147483648, +2147483392, np.int32),
-             's16': (-32768, +32767, np.int16),
-             'u8': (0, 255, np.uint8),
-             }
 
 
 class WavFile:
@@ -78,13 +74,19 @@ class WavFile:
         Array containing the time vector of the WAV file in seconds.
 
     """
+    pcm_table = {'s32': (-2147483648, +2147483647, np.int32),
+                 's24': (-2147483648, +2147483392, np.int32),
+                 's16': (-32768, +32767, np.int16),
+                 'u8': (0, 255, np.uint8),
+                 }
+
     def __init__(self,
                  filename: str,
                  norm: int | float = 1.,
                  cal: int | float = 1.,
-                 wav: np.ndarray = None,
-                 fs: int = None,
-                 pcm: str = None,
+                 wav: np.ndarray | None = None,
+                 fs: int | None = None,
+                 pcm: Literal['s32', 's24', 's16', 'u8'] | None = None,
                  ) -> None:
         self.filename = filename if filename.endswith('.wav') else filename + '.wav'
 
@@ -224,6 +226,32 @@ class WavFile:
 
         """
         wav = cls._two_channel_to_wav(left_array, right_array)
+        return cls(filename, wav=wav, fs=fs)
+
+    @classmethod
+    def from_one_channel(cls,
+                         filename: str,
+                         mono_array: np.ndarray,
+                         fs: int,
+                         ):
+        """
+        Create an instance of WavFile from a mono signal array
+
+        Parameters
+        ----------
+        filename: str
+            Filename for the new WAV file.
+        mono_array: numpy.ndarray
+            1D Numpy array containing the mono signal.
+        fs: int, optional
+            Sampling frequency of input arrays.
+
+        Returns
+        -------
+        An instance of WavFile with the given signal information.
+
+        """
+        wav = cls._two_channel_to_wav(mono_array, mono_array)
         return cls(filename, wav=wav, fs=fs)
 
     @staticmethod
