@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ```WavFile``` class:
   - ```from_one_channel()``` function to create a new WavFile instance from a mono signal array, similar to ```from_two_channel()```.
 
+- ```sound_levels``` module:
+  - Added parameter ```centered: bool = True``` to ```octave_spectrogram()``` to allow the same time series control of the ```t_out()``` function.
+
 
 ### Changed
 

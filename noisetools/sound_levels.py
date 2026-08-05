@@ -379,6 +379,7 @@ def octave_spectrogram(signal: list | np.ndarray,
                        delta_t: float | np.number = 1.,
                        octave: OctaveBand | None = None,
                        complete: bool = True,
+                       centered: bool = True,
                        ) -> pd.DataFrame:
     """
     Calculate the OSPL over time, of a digital signal, per octave band.
@@ -399,6 +400,9 @@ def octave_spectrogram(signal: list | np.ndarray,
         In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
         calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
         in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
+    centered: bool, optional (default=True)
+        Centres the timestamps to the average time in each bin.
+        Effectively, this shifts the time indication to t + delta_t / 2.
 
     Returns
     -------
@@ -425,7 +429,7 @@ def octave_spectrogram(signal: list | np.ndarray,
 
     out_index, octave = octave_index(fs, octave)
 
-    out_t = t_out(sig.size, fs, delta_t, complete=complete)
+    out_t = t_out(sig.size, fs, delta_t, complete=complete, centered=centered)
     out_spectrogram = pd.DataFrame(index=out_index, columns=out_t, dtype=float)
 
     for band_select in out_index.get_level_values('band'):
