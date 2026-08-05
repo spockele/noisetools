@@ -112,13 +112,13 @@ class WavFile:
             else:
                 pcm = pcm.lower()
 
-                if pcm not in pcm_table.keys():
+                if pcm not in self.pcm_table.keys():
                     raise ValueError('Given WAV file PCM format not supported by noisetools.')
-                elif pcm_table[pcm][2] != wav.dtype:
+                elif self.pcm_table[pcm][2] != wav.dtype:
                     raise ValueError(f'Provided PCM format ({pcm}) does not match the obtained dtype ({wav.dtype}).')
 
                 wav = wav.astype(np.float32)
-                wav = 2 * (wav - pcm_table[pcm][0]) / (pcm_table[pcm][1] - pcm_table[pcm][0]) - 1.
+                wav = 2 * (wav - self.pcm_table[pcm][0]) / (self.pcm_table[pcm][1] - self.pcm_table[pcm][0]) - 1.
 
         # Apply both calibration and normalisation factors to the wav file data.
         wav: np.ndarray = cal * wav / norm
