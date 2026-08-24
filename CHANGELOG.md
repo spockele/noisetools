@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 - ```sound_levels``` module:
-  - Added parameter ```centered: bool = True``` to ```octave_spectrogram()``` to allow the same time series control of the ```t_out()``` function.
+  - Added parameter ```centered: bool = True``` to ```octave_spectrogram()``` to allow the same time series control of the ```t_out()``` function.d
+  - Time weighting functions ```p2_time_weighted``` and ```l_time_weighted``` compliant with IEC 61672-1:2013 and the older impulse weighting standard.
+  - ```leq_t``` alias for the ```ospl_t``` function to reflect the actual quantity that is measured.
 
 
 ### Changed

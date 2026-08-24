@@ -18,17 +18,122 @@
 from matplotlib.colors import TABLEAU_COLORS
 import matplotlib.pyplot as plt
 import scipy.signal as spsig
+from typing import Literal
 import pandas as pd
 import numpy as np
 import warnings
 
-from .weighting_functions import weigh_signal
-from .octave_band import OctaveBand
+from noisetools.weighting_functions import weigh_signal
+from noisetools.octave_band import OctaveBand
 
 tableau = list(TABLEAU_COLORS.keys())
-__all__ = ['p2eq', 'ospl', 'ospl_t', 't_out',
+__all__ = ['p2_time_weighted', 'l_time_weighted',
+           'p2eq', 'ospl', 'ospl_t', 't_out',
            'octave_spectrum', 'octave_spectrogram',
            'amplitude_modulation', ]
+
+
+def p2_time_weighted(signal: list | np.ndarray,
+                     fs: int | float | np.number,
+                     mode: Literal['fast', 'slow', 'impulse', 'f', 's', 'i'],
+                     weighting: Literal['A', 'C'] | None = None,
+                     ) -> np.ndarray:
+    """
+    Apply IEC compliant time weighting to the signal squared.
+
+    Parameters
+    ----------
+    signal: array_like
+        1D Array with the digital signal.
+    fs: number
+        The sampling frequency of the digital signal.
+    mode: str
+        Sets the time weighting mode corresponding to the IEC 61672-1:2013 standard. [1]_
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
+
+    Returns
+    -------
+    numpy.ndarray
+        The time weighted signal squared. Same size as the signal array.
+
+    References
+    ----------
+    .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
+        Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+
+    """
+    # Convert signal to numpy array
+    if not isinstance(signal, np.ndarray):
+        sig = np.array(signal).copy()
+    else:
+        sig = signal.copy()
+
+    # Check that this signal is 1d array
+    if sig.ndim > 1:
+        raise ValueError('noisetools.p2eq only supports 1d signal arrays.')
+
+    # Apply the selected weighting
+    if weighting is not None:
+        sig = weigh_signal(sig, fs, curve=weighting)
+
+    if mode in ('slow', 'fast', 'f', 's'):
+        tau = 1. if mode in ('slow', 's') else 0.125
+
+        alpha = np.exp(-1 / (fs * tau))
+        b = [1 - alpha]
+        a = [1, -alpha]
+
+        return spsig.lfilter(b, a, sig ** 2)
+
+    else:
+        tau_rise = 0.035
+        alpha_rise = 1 - np.exp(-1 / (fs * tau_rise))
+        tau_fall = 1.500
+        alpha_fall = 1 - np.exp(-1 / (fs * tau_fall))
+
+        new_sig = np.zeros(sig.size, dtype=float)
+        new_sig[0] += alpha_rise * sig[0] ** 2
+
+        for ii in range(1, sig.size):
+            rising = sig[ii] ** 2 > new_sig[ii - 1]
+            new_sig[ii] = new_sig[ii - 1] + (alpha_rise if rising else alpha_fall) * (sig[ii] ** 2 - new_sig[ii - 1])
+
+        return new_sig
+
+
+def l_time_weighted(signal: list | np.ndarray,
+                     fs: int | float | np.number,
+                     mode: Literal['fast', 'slow', 'impulse', 'f', 's', 'i'],
+                     weighting: Literal['A', 'C'] | None = None,
+                     ) -> np.ndarray:
+    """
+    Calculate the instantaneous sound level with IEC compliant time weighting.
+
+    Parameters
+    ----------
+    signal: array_like
+        1D Array with the digital signal.
+    fs: number
+        The sampling frequency of the digital signal.
+    mode: str
+        Sets the time weighting mode corresponding to the IEC 61672-1:2013 standard. [1]_
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
+
+    Returns
+    -------
+    numpy.ndarray
+        The time weighted sound level of the signal. Same size as the signal array.
+
+    References
+    ----------
+    .. [1] International Electrotechnical Commission (IEC), ‘Electroacoustics - Sound Level Meters - Part 1:
+        Specifications’, International Standard IEC 61672-1:2013, Sep. 2013.
+
+    """
+    return 10 * np.log10(p2_time_weighted(signal, fs, mode, weighting) / (2e-5 ** 2))
+
 
 @warnings.deprecated("The function 'equivalent_pressure()' is renamed to 'p2eq'.")
 def equivalent_pressure(*args,
@@ -56,7 +161,7 @@ def equivalent_pressure(*args,
 
 def p2eq(signal: list | np.ndarray,
          fs: int | float | np.number,
-         weighting: str | None = None,
+         weighting: Literal['A', 'C'] | None = None,
          ) -> float:
     """
     Calculate the equivalent pressure (Pe^2) of the input sound signal.
@@ -64,7 +169,7 @@ def p2eq(signal: list | np.ndarray,
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal
     weighting: str, optional
@@ -95,7 +200,7 @@ def p2eq(signal: list | np.ndarray,
 
 def ospl(signal: list | np.ndarray,
          fs: int | float | np.number,
-         weighting: str | None = None,
+         weighting: Literal['A', 'C'] | None = None,
          ) -> float:
     """
     Calculate the Overall Sound Pressure Level of the input sound signal.
@@ -103,7 +208,7 @@ def ospl(signal: list | np.ndarray,
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
     weighting: str, optional
@@ -114,9 +219,7 @@ def ospl(signal: list | np.ndarray,
     Overall sound pressure level in dB (weighted to selected weighting)
 
     """
-    pe2 = p2eq(signal, fs, weighting, )
-
-    return 10 * np.log10(pe2 / (2e-5 ** 2))
+    return 10 * np.log10(p2eq(signal, fs, weighting, ) / (2e-5 ** 2))
 
 
 @warnings.deprecated("The function 'ospl_t_out()' is renamed to 't_out'.")
@@ -155,7 +258,7 @@ def t_out(signal_size: int,
     Parameters
     ----------
     signal_size: int
-        Array with the digital signal.
+        Size of the 1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
     delta_t: float | np.number, optional (default=1.)
@@ -197,7 +300,7 @@ def t_out(signal_size: int,
 
 def p2eq_t(signal: list | np.ndarray,
            fs: int | float | np.number,
-           weighting: str | None = None,
+           weighting: Literal['A', 'C'] | None = None,
            delta_t: float | np.number = 1.,
            complete: bool = True,
            ) -> np.ndarray:
@@ -207,7 +310,7 @@ def p2eq_t(signal: list | np.ndarray,
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal
     weighting: str, optional
@@ -258,25 +361,25 @@ def p2eq_t(signal: list | np.ndarray,
     return pe2
 
 
-def ospl_t(signal: list | np.ndarray,
+def leq_t(signal: list | np.ndarray,
            fs: int | float | np.number,
-           weighting: str | None = None,
+           weighting: Literal['A', 'C'] | None = None,
            delta_t: float | np.number = 1.,
            complete: bool = True,
            ) -> np.ndarray:
     """
-    Calculate the OSPL over time, of a digital signal.
+    Calculate the equivalent sound pressure level over time, of a digital signal.
 
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     delta_t: float | np.number, optional (default=1.)
-        Desired timestep in the OSPL output, in seconds.
+        Timestep over which to calculate Leq, in seconds.
     complete: bool, optional (default=True)
         In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
         calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
@@ -284,12 +387,15 @@ def ospl_t(signal: list | np.ndarray,
 
     Returns
     -------
-    OPSL (dB) (weighted to selected weighting) at the timestamps defined by delta_t.
+    Leq (dB) (weighted to selected weighting) at the timestamps defined by delta_t.
 
     """
     pe2 = p2eq_t(signal, fs, weighting, delta_t, complete)
 
     return 10 * np.log10(pe2 / (2e-5 ** 2))
+
+
+ospl_t = leq_t
 
 
 def octave_index(fs: int | float | np.number,
@@ -328,7 +434,7 @@ def octave_index(fs: int | float | np.number,
 
 def octave_spectrum(signal: list | np.ndarray,
                     fs: int | float | np.number,
-                    weighting: str | None = None,
+                    weighting: Literal['A', 'C'] | None = None,
                     octave: OctaveBand | None = None,
                     ) -> pd.Series:
     """
@@ -337,7 +443,7 @@ def octave_spectrum(signal: list | np.ndarray,
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
     weighting: str, optional
@@ -367,25 +473,25 @@ def octave_spectrum(signal: list | np.ndarray,
 
 def octave_spectrogram(signal: list | np.ndarray,
                        fs: int | float | np.number,
-                       weighting: str | None = None,
+                       weighting: Literal['A', 'C'] | None = None,
                        delta_t: float | np.number = 1.,
                        octave: OctaveBand | None = None,
                        complete: bool = True,
                        centered: bool = True,
                        ) -> pd.DataFrame:
     """
-    Calculate the OSPL over time, of a digital signal, per octave band.
+    Calculate the Leq over time, of a digital signal, per octave band.
 
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     delta_t: float | np.number, optional (default=1.)
-        Desired timestep in the OSPL output, in seconds.
+        Timestep over which to calculate Leq, in seconds.
     octave: OctaveBand, optional (default = OctaveBand())
         Instance of the noisetools.octave_band.OctaveBand class to base the octave band spectrum on.
     complete: bool, optional (default=True)
@@ -398,7 +504,7 @@ def octave_spectrogram(signal: list | np.ndarray,
 
     Returns
     -------
-    A pandas DataFrame containing the sound pressure levels per octave band, over time.
+    A pandas DataFrame containing the equivalent sound pressure levels per octave band, over time.
     The columns are the time dimension. The index contains:
         - ```band```: the band number (-)
         - ```fm```: the corresponding central frequency (Hz)
@@ -434,8 +540,8 @@ def octave_spectrogram(signal: list | np.ndarray,
 def amplitude_modulation(signal: list | np.ndarray,
                          fs: int | float | np.number,
                          expected_bpf: tuple[int | float | np.number, int | float | np.number],
-                         weighting: str = 'A',
-                         freq_range: str | tuple[float, float] = 'reference',
+                         weighting: Literal['A', 'C'] | None = 'A',
+                         freq_range: Literal['low', 'reference', 'high'] | tuple[float, float] = 'reference',
                          verbose: bool = False,
                          ) -> pd.Series:
     """
@@ -444,7 +550,7 @@ def amplitude_modulation(signal: list | np.ndarray,
     Parameters
     ----------
     signal: array_like
-        Array with the digital signal.
+        1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
     expected_bpf: tuple[number, number]
@@ -652,3 +758,15 @@ def amplitude_modulation(signal: list | np.ndarray,
         plt.show()
 
     return modulation_depth
+
+
+if __name__ == '__main__':
+    test_sig = np.zeros(20 * 48000)
+    test_sig[1*48000:10*48000] = 1
+
+    plt.plot(test_sig ** 2)
+    plt.plot(p2_time_weighted(test_sig, 48000, mode='slow'))
+    plt.plot(p2_time_weighted(test_sig, 48000, mode='fast'))
+    plt.plot(p2_time_weighted(test_sig, 48000, mode='impulse'))
+
+    plt.show()
