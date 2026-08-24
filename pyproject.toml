@@ -24,7 +24,7 @@ dependencies=[
     'nptdms>=1.10',
 ]
 classifiers=[
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Education',
     'Intended Audience :: Science/Research',
     'Natural Language :: English',
