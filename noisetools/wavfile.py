@@ -88,7 +88,9 @@ class WavFile:
         # Read from a file, if it exists, and if wav is not defined.
         if os.path.isfile(self.filename) and wav is None:
             self.fs, wav = spio.wavfile.read(filename)
-            self.fs: int
+            if wav.ndim == 1:
+                wav = wav.reshape((-1, 1))
+
         # Warn the user if the WAV file exists when a wav array is given.
         elif os.path.isfile(self.filename):
             warnings.warn(f'WAV file with name {self.filename} already exists. Created WavFile instance based on given wav array.')
@@ -102,7 +104,8 @@ class WavFile:
             self.fs = fs
 
         # It is now certain the variable _wav is filled.
-        self._wav = wav.copy()
+        self._wav: np.ndarray = wav.copy()
+        self.fs: int
 
         # Convert to 32-bit floats, for saving to wavfile purposes.
         if self._wav.dtype != np.float32:
