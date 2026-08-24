@@ -45,8 +45,7 @@ class WavFile:
         are written as such.
         IMPORTANT: both ```norm``` and ```cal``` are applied to the data.
     wav: numpy.ndarray, optional
-        Optional entry for the creation of a new WAV file. For mono signals, this should be a 1D array.
-        For stereo signals, this should be a 2D array with shape (length, 2).
+        Optional entry for the creation of a new WAV file. This should be a 2D array with shape (size, 1) or (size, 2).
         NOTE: when an array is given, a sampling frequency fs should be included.
     fs: int, optional
         Sampling frequency of input array 'wav'.
@@ -60,11 +59,7 @@ class WavFile:
         Name of the associated WAV file.
     fs: int
         Sampling frequency of the stored singal(s).
-    wav_left: numpy.ndarray
-        Left audio signal (in case of a mono signal, this equals wav_right).
-    wav_right: numpy.ndarray
-        Right audio signal (in case of a mono signal, this equals wav_left).
-    length: int
+    size: int
         Number of samples in the signal(s).
     duration: float
         Duration of the signal(s) in seconds.
@@ -90,10 +85,13 @@ class WavFile:
                  ) -> None:
         self.filename = filename if filename.endswith('.wav') else filename + '.wav'
 
-        # Read from a file, if it exists.
+        # Read from a file, if it exists, and if wav is not defined.
         if os.path.isfile(self.filename) and wav is None:
             self.fs, wav = spio.wavfile.read(filename)
             self.fs: int
+        # Warn the user if the WAV file exists when a wav array is given.
+        elif os.path.isfile(self.filename):
+            warnings.warn(f'WAV file with name {self.filename} already exists. Created WavFile instance based on given wav array.')
         # Otherwise, a wav array is expected, so check for the existence.
         elif wav is None:
             raise FileNotFoundError(f'[Errno 2] No such file or directory: {self.filename}')
@@ -103,10 +101,13 @@ class WavFile:
         else:
             self.fs = fs
 
+        # It is now certain the variable _wav is filled.
+        self._wav = wav.copy()
+
         # Convert to 32-bit floats, for saving to wavfile purposes.
-        if wav.dtype != np.float32:
-            if np.issubdtype(wav.dtype, np.floating):
-                wav = wav.astype(np.float32)
+        if self._wav.dtype != np.float32:
+            if np.issubdtype(self._wav.dtype, np.floating):
+                self._wav = self._wav.astype(np.float32)
             elif pcm is None:
                 raise ValueError(f'{filename} is not in PCM f32 format, provide the PCM format to WavFile.')
             else:
@@ -114,42 +115,77 @@ class WavFile:
 
                 if pcm not in self.pcm_table.keys():
                     raise ValueError('Given WAV file PCM format not supported by noisetools.')
-                elif self.pcm_table[pcm][2] != wav.dtype:
-                    raise ValueError(f'Provided PCM format ({pcm}) does not match the obtained dtype ({wav.dtype}).')
+                elif self.pcm_table[pcm][2] != self._wav.dtype:
+                    raise ValueError(f'Provided PCM format ({pcm}) does not match the obtained dtype ({self._wav.dtype}).')
 
-                wav = wav.astype(np.float32)
-                wav = 2 * (wav - self.pcm_table[pcm][0]) / (self.pcm_table[pcm][1] - self.pcm_table[pcm][0]) - 1.
+                self._wav = self._wav.astype(np.float32)
+                self._wav = 2 * (self._wav - self.pcm_table[pcm][0]) / (self.pcm_table[pcm][1] - self.pcm_table[pcm][0]) - 1.
 
         # Apply both calibration and normalisation factors to the wav file data.
-        wav: np.ndarray = cal * wav / norm
+        self._wav: np.ndarray = cal * self._wav / norm
 
-        # It is now certain the variable wav is filled.
-        # Check that wav has maximum two dimensions, since there is only a sample and channel dimension.
-        if wav.ndim > 2:
-            raise ValueError(f'wav input array has too many dimensions. wav.ndim = {wav.ndim} > 2.')
-
-        # In case of a stereo array.
-        elif wav.ndim == 2:
-            # Check it has a correct shape for use.
-            if wav.shape[1] > 2:
-                raise ValueError(f'wav input array has too many channels. wav.shape[1] = {wav.shape[1]} > 2')
-            # Split up the channels.
-            self.wav_left: np.ndarray = wav[:, 0].copy()
-            self.wav_right: np.ndarray = wav[:, 1].copy()
-
-        # In case of a mono array, fill both channels with this array.
+        # Check that wav has exactly two dimensions.
+        if self._wav.ndim != 2:
+            raise ValueError(f'Parameter wav should be a 2D numpy array.')
         else:
-            self.wav_left: np.ndarray = wav.copy()
-            self.wav_right: np.ndarray = wav.copy()
+            # Determine if it is mono or stereo.
+            self.mono = self._wav.shape[1] == 1
+            # Check if the array has the correct shape.
+            if self._wav.shape[1] > 2:
+                raise ValueError(f'Axis 1 of parameter wav should have size 2, got {self._wav.shape[1]}')
 
-        # Determine the signal length, duration and create a time vector.
-        self.length = self.wav_left.size
-        self.duration = float(self.length / self.fs)
-        self.duration_string = self.seconds_to_mmssms(self.duration)
-        self.time = np.linspace(0, self.duration, self.length, endpoint=False)
+        # Set the signal size.
+        self.size = self._wav.shape[0]
+        # Determine the signal duration and create a time vector.
+        self.duration = float(self.size / self.fs)
+        self.time = np.linspace(0, self.duration, self.size, endpoint=False)
+        # Create a human-readable string of the signal duration.
+        self.duration_string = f'{str(int(self.duration / 60)).zfill(2)}:{str(int(self.duration % 60)).zfill(2)}:{str(int((self.duration % 60) % 1 * 1e3)).zfill(3)}'
+
+    @property
+    @warnings.deprecated('The attribute WavFile.length will be replaced with WavFile.size.')
+    def length(self):
+        return self.size
+
+    @property
+    @warnings.deprecated('The attribute WavFile.wav_left will be replaced with WavFile.left for stereo signals, and WavFile.sig for mono signals.')
+    def wav_left(self):
+        if self.mono:
+            return self._wav.flatten()
+        else:
+            return self._wav[:, 0]
+
+    @property
+    @warnings.deprecated('The attribute WavFile.wav_right will be replaced with WavFile.right for stereo signals, and WavFile.sig for mono signals.')
+    def wav_right(self):
+        if self.mono:
+            return self._wav.flatten()
+        else:
+            return self._wav[:, 1]
+
+    @property
+    def left(self):
+        if self.mono:
+            raise AttributeError('Mono WavFile objects do not contain attribute WavFile.left.')
+        else:
+            return self._wav[:, 0]
+
+    @property
+    def right(self):
+        if self.mono:
+            raise AttributeError('Mono WavFile objects do not contain attribute WavFile.right.')
+        else:
+            return self._wav[:, 1]
+
+    @property
+    def sig(self):
+        if self.mono:
+            return self._wav.flatten()
+        else:
+            raise AttributeError('Stereo WavFile objects do not contain attribute WavFile.sig.')
 
     def __repr__(self) -> str:
-        mono_str = 'mono' if self.check_mono() else 'stereo'
+        mono_str = 'mono' if self.mono else 'stereo'
         return f"<'{self.filename}' ({self.duration_string}) ({mono_str})>"
 
     def __add__(self, other):
@@ -159,26 +195,37 @@ class WavFile:
         if self.fs != other.fs:
             other.resample(self.fs)
 
-        if self.length != other.length:
+        if self.size != other.size:
             raise ValueError('Two WavFile instances require the same length for addition.')
 
-        left_array = self.wav_left + other.wav_left
-        right_array = self.wav_right + other.wav_right
+        if self.mono and not other.mono:
+            return self.from_two_channel(self.filename, self.sig + other.left, self.sig + other.right, self.fs)
+        else:
+            return self.__class__(self.filename, wav=self._wav + other._wav, fs=self.fs)
 
-        return self.from_two_channel(self.filename, left_array, right_array, self.fs)
 
     def __mul__(self, other):
         if not (isinstance(other, int) or isinstance(other, float) or isinstance(other, np.number)):
             raise NotImplementedError('WavFile only support multiplication by a constant value.')
 
-        left_array = self.wav_left * other
-        right_array = self.wav_right * other
-
-        return self.from_two_channel(self.filename, left_array, right_array, self.fs)
+        return self.__class__(self.filename, wav=self._wav * other, fs=self.fs)
 
     __rmul__ = __mul__
 
+    def __truediv__(self, other):
+        if not (isinstance(other, int) or isinstance(other, float) or isinstance(other, np.number)):
+            raise NotImplementedError('WavFile only support division by a constant value.')
+
+        return self.__class__(self.filename, wav=self._wav / other, fs=self.fs)
+
+    def __rtruediv__(self, other):
+        if not (isinstance(other, int) or isinstance(other, float) or isinstance(other, np.number)):
+            raise NotImplementedError('WavFile only support division by a constant value.')
+
+        return self.__class__(self.filename, wav=other / self._wav, fs=self.fs)
+
     @staticmethod
+    @warnings.deprecated('Static method WavFile._two_channel_to_wav is deprecated.')
     def _two_channel_to_wav(left_array: np.ndarray,
                             right_array: np.ndarray,
                             ) -> np.ndarray:
@@ -225,13 +272,20 @@ class WavFile:
         An instance of WavFile with the given signal information.
 
         """
-        wav = cls._two_channel_to_wav(left_array, right_array)
+        if left_array.ndim != 1:
+            raise ValueError('Left signal array must be 1D.')
+        if right_array.ndim != 1:
+            raise ValueError('Right signal array must be 1D.')
+        if left_array.size != right_array.size:
+            raise ValueError('Left and right signal arrays must have the same size.')
+
+        wav = np.concatenate([left_array.reshape((-1, 1)), right_array.reshape((-1, 1))], axis=1)
         return cls(filename, wav=wav, fs=fs)
 
     @classmethod
     def from_one_channel(cls,
                          filename: str,
-                         mono_array: np.ndarray,
+                         sig_array: np.ndarray,
                          fs: int,
                          ):
         """
@@ -241,7 +295,7 @@ class WavFile:
         ----------
         filename: str
             Filename for the new WAV file.
-        mono_array: numpy.ndarray
+        sig_array: numpy.ndarray
             1D Numpy array containing the mono signal.
         fs: int, optional
             Sampling frequency of input arrays.
@@ -251,10 +305,13 @@ class WavFile:
         An instance of WavFile with the given signal information.
 
         """
-        wav = cls._two_channel_to_wav(mono_array, mono_array)
-        return cls(filename, wav=wav, fs=fs)
+        if sig_array.ndim != 1:
+            raise ValueError('Signal array must be 1D.')
+
+        return cls(filename, wav=sig_array.reshape((-1, 1)), fs=fs)
 
     @staticmethod
+    @warnings.deprecated('Static method WavFile.seconds_to_mmssms is deprecated.')
     def seconds_to_mmssms(t: int | float,
                           ) -> str:
         """
@@ -277,6 +334,7 @@ class WavFile:
         return f'{mm}:{ss}:{ms}'
 
     @staticmethod
+    @warnings.deprecated('Static method WavFile.mmssms_to_seconds is deprecated.')
     def mmssms_to_seconds(t: str,
                           ) -> float:
         """
@@ -298,50 +356,51 @@ class WavFile:
 
         return 60 * mm + ss + ms / 1e3
 
+    @warnings.deprecated('WavFile.check_mono is deprecated and replaced by the attribute mono.')
     def check_mono(self,
                    ) -> bool:
         """
         Determine whether the signal in this WAV file is mono.
         """
-        return np.all(np.isclose(self.wav_left, self.wav_right, atol=1e-12))
+        return self.mono
 
     def resample(self,
                  fs: int,
-                 ) -> None:
+                 filename: str | None = None,
+                 ):
         """
-        Resample the signals in this wav file to a new sampling frequency.
+        Resample this wav file to a new sampling frequency.
 
         Parameters
         ----------
         fs: int
             New sampling frequency for the signal in Hertz (Hz)
+        filename: str, optional
+            Optional filename, if the resampled signal requires a different file is desired.
+
+        Returns
+        -------
+        A WavFile instance with the resampled signal.
 
         """
         # Don't do anything if the sampling frequency is equal.
         if self.fs == fs:
             warnings.warn('Requested resampling frequency is equal to current sampling frequency.', stacklevel=2)
-            return
-
-        # Set the up- and down-sampling for scipy signal.
-        up = fs
-        down = self.fs
+            return self
 
         # Resample the signal(s).
-        self.wav_left: np.ndarray = spsig.resample_poly(self.wav_left, up, down)
-        self.wav_right: np.ndarray = spsig.resample_poly(self.wav_right, up, down)
-        # Update the wavfile information.
-        self.fs = fs
-        self.length = self.wav_left.size
-        self.duration = self.length / self.fs
-        self.duration_string = self.seconds_to_mmssms(self.duration)
-        self.time = np.linspace(0, self.duration, self.length, endpoint=False)
+        _wav: np.ndarray = spsig.resample_poly(self._wav, fs, self.fs, axis=1)
+
+        filename = self.filename if filename is None else filename
+
+        return self.__class__(filename, wav=_wav, fs=fs)
 
     def write(self,
               overwrite: bool = True,
-              filename: str = None,
+              filename: str | None = None,
               ) -> None:
         """
-        Write the the information in this instance to a WAV file.
+        Write the information in this instance to a WAV file.
 
         Parameters
         ----------
@@ -349,27 +408,23 @@ class WavFile:
             Explicit indication whether to overwrite the WAV file of this instance.
         filename: str, optional
             Optional filename, if writing to a different file is desired.
-            This will change the WavFile objects self.filename.
 
         """
-        self.filename = self.filename if filename is None else filename
+        filename = self.filename if filename is None else filename
 
         if os.path.isfile(self.filename) and not overwrite:
             return
 
-        if self.check_mono():
-            spio.wavfile.write(self.filename, self.fs, self.wav_left)
+        if self.mono:
+            spio.wavfile.write(filename, self.fs, self._wav.flatten())
         else:
-            wav = np.concatenate([self.wav_left.reshape(-1, 1),
-                                  self.wav_right.reshape(-1, 1)],
-                                 axis=1)
-            spio.wavfile.write(self.filename, self.fs, wav)
+            spio.wavfile.write(filename, self.fs, self._wav)
 
     def export(self,
-               t0: float | str,
-               t1: float | str,
-               filename: str = None,
-               fs: int = None,
+               t0: float,
+               t1: float,
+               filename: str | None = None,
+               fs: int | None = None,
                write: bool = False,
                ):
         """
@@ -377,18 +432,18 @@ class WavFile:
 
         Parameters
         ----------
-        t0: float | str
-            Start time of the export in seconds, or in a mm:ss:_ms format.
-        t1: float | str
-            End time of the export in seconds, or in a mm:ss:_ms format.
-            NOTE: In case t1==self.duration, the selection becomes t0 <= WavFile.t <= t1
+        t0: float
+            Start time of the export in seconds.
+        t1: float
+            End time of the export in seconds.
+            Note: In case t1==self.duration, the selection becomes t0 <= WavFile.t <= t1
         filename: str, optional
             File name to export partial signal to. Defaults to filename_export.wav.
         fs: int, optional
             Sampling frequency for optional resampling before export.
         write: bool, optional
             Write the information of the new instance to a WAV file immediately.
-            NOTE: This will overwrite previous wav files with the same filename!
+            IMPORTANT: This will ALWAYS overwrite previous wav files with the same filename!
 
         Returns
         -------
@@ -396,28 +451,35 @@ class WavFile:
 
         """
         if fs is not None:
-            self.resample(fs)
+            warnings.warn('Resampling of signals in WavFile.export with parameter fs is deprecated.',
+                          DeprecationWarning
+                          )
+            # Temporary patch to keep this working through the deprecation.
+            resampled = self.resample(fs)
+            self.time = resampled.time
+            self._wav = resampled._wav
 
         if isinstance(t0, str):
+            warnings.warn('Use of a string for WavFile.export parameter t0 is deprecated.',
+                          DeprecationWarning
+                          )
             t0 = self.mmssms_to_seconds(t0)
         if isinstance(t1, str):
+            warnings.warn('Use of a string for WavFile.export parameter t1 is deprecated.',
+                          DeprecationWarning
+                          )
             t1 = self.mmssms_to_seconds(t1)
 
         select = (t0 <= self.time) & (self.time < t1) if t1 != self.duration else (t0 <= self.time) & (self.time <= t1)
 
         if filename is None:
             filename = self.filename.replace('.wav', '_export.wav')
-        elif filename == self.filename and write and os.path.isfile(self.filename):
-            raise FileExistsError(f"Filename of the WavFile export equals the original filename ({self.filename}). "
-                                  f"Please choose a different filename or set write=False.")
         elif filename == self.filename and os.path.isfile(self.filename):
             warnings.warn(f"Filename of the WavFile export equals the original filename ({self.filename}). It is "
-                          f"recommended to choose a different filename for exporting sections of the signal.")
+                          f"recommended to choose a different filename for exporting sections of the signal."
+                          )
 
-        if self.check_mono():
-            wavfile = WavFile(filename, wav=self.wav_left[select], fs=self.fs)
-        else:
-            wavfile = WavFile.from_two_channel(filename, self.wav_left[select], self.wav_right[select], self.fs)
+        wavfile = self.__class__(filename, wav=self._wav[select, :], fs=self.fs)
 
         if write:
             wavfile.write(overwrite=True)

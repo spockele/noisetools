@@ -9,22 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.1.dev2] - UNRELEASED
 
 ### Added
-
 - ```WavFile``` class:
   - ```from_one_channel()``` function to create a new WavFile instance from a mono signal array, similar to ```from_two_channel()```.
+  - ```left```, ```right``` and ```sig``` properties have been added for external access to the signal content.
+  - ```__truediv__``` and ```__rtruediv__``` operators have been added.
+
 
 - ```sound_levels``` module:
   - Added parameter ```centered: bool = True``` to ```octave_spectrogram()``` to allow the same time series control of the ```t_out()``` function.
 
 
 ### Changed
-
 - ```WavFile``` class:
+  - All in-place function behaviour has been changed to returning a new ```WavFile``` instance.
   - Changed typehint of ```pcm``` parameter to a Literal with the accepted values.
   - Move the ```pcm_table``` to the class itself, as it is only useful for ```WavFile.__init__()```
+  - Large change in dealing with the signal content:
+    - Attributes ```wav_left``` and ```wav_right``` have been replaced by ```_wav```, an internal (size x 1) or (size x 2) shaped array.
+    - ```left```, ```right``` and ```sig``` properties have been added for external access to the signal content.
+    - Parameter ```wav``` of the class can now only be a 2D numpy array. Creation of a ```WavFile``` instance with 1D arrays should be done with ```from_two_channel()``` and ```from_one_channel```.
+    - Parameter ```filename``` of the ```write()``` function no longer overwrites the attribute ```self.filename```.
 
 
-[//]: # (### Deprecated)
+### Deprecated
+- ```WavFile``` class:
+  - All in-place function behaviour has been changed to returning a new ```WavFile``` instance.
+  - Attributes ```wav_left``` and ```wav_right``` are replaced with properties ```left``` and ```right```, respectively for a stereo signal, and with ```sig``` for a mono array.
+  - Interpolation with the parameter ```fs``` in the ```export()``` function is deprecated.
+  - Static methods ```seconds_to_mmssms()``` and ```mmssms_to_seconds()``` are deprecated.
+  - Method ```_two_channel_to_wav()``` is deprecated.
+  - Attribute ```length``` is replaced by ```size``` to match numpy and pandas nomenclature.
+
 
 [//]: # (### Removed)
 
