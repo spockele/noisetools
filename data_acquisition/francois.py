@@ -79,7 +79,7 @@ if __name__ == '__main__':
             wav.write()
 
             # Create a pandas DataFrame and store it as csv.
-            df = pd.DataFrame(dat, index=np.linspace(0., t_record, num=wav.length), columns=['left', 'right'])
+            df = pd.DataFrame(dat, index=np.linspace(0., t_record, num=wav.size), columns=['left', 'right'])
             df.to_csv(out_path.replace('.wav', '.csv'))
 
             # Let user break the loop.
