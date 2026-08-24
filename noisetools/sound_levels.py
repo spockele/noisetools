@@ -1,6 +1,6 @@
 """Functions related to the levels of measured or simulated sound signals.
 """
-from fontTools.ufoLib.utils import deprecated
+
 # Copyright 2026 Josephine Pockelé
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,7 @@ __all__ = ['p2eq', 'ospl', 'ospl_t', 't_out',
            'octave_spectrum', 'octave_spectrogram',
            'amplitude_modulation', ]
 
-@deprecated
+@warnings.deprecated("The function 'equivalent_pressure()' is renamed to 'p2eq'.")
 def equivalent_pressure(*args,
                         **kwargs,
                         ) -> float:
@@ -51,10 +51,6 @@ def equivalent_pressure(*args,
     Equivalent pressure in Pa^2 (weighted to selected weighting)
 
     """
-    warnings.warn("The function 'equivalent_pressure()' is renamed to 'p2eq'. "
-                  "equivalent_pressure will be removed in a future version of noisetools",
-                  DeprecationWarning
-                  )
     return p2eq(*args, **kwargs)
 
 
@@ -123,7 +119,7 @@ def ospl(signal: list | np.ndarray,
     return 10 * np.log10(pe2 / (2e-5 ** 2))
 
 
-@deprecated
+@warnings.deprecated("The function 'ospl_t_out()' is renamed to 't_out'.")
 def ospl_t_out(*args,
                **kwargs,
                ) -> np.ndarray:
@@ -144,10 +140,6 @@ def ospl_t_out(*args,
     Time (seconds) at which the OSPL is calculated. Determined as the central timestamp
         in the sections of length delta_t.
     """
-    warnings.warn("The function 'ospl_t_out()' is renamed to 't_out'."
-                  "ospl_t_out will be removed in a future version of noisetools",
-                  DeprecationWarning
-                  )
     return t_out(*args, **kwargs)
 
 
