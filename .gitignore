@@ -159,15 +159,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-# Some items to exclude
-DTU_NTK_DATASET.zip
-
-turbines/nrel/
-turbines/nrel_discon/
-turbines/ntk/
-turbines/dtu/
-
-xfoil.exe
-
 # Ignore measurement folder in the data_acquisition module
 data_acquisition/measurements/
