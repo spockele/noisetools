@@ -129,7 +129,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     fpath = fname_hawc2_noise_psd(model_path, output_filename, obs)
     # Define the header length explicitly and define the noise models.
     header_length = 6
-    noise_models = ['All', 'TI', 'TE', 'ST', 'TP', ]
+    noise_models = ['Total', 'TI', 'TE', 'ST', 'TP', ]
     # Open the file and read the lines.
     with open(fpath, 'r') as f:
         lines = f.readlines()
@@ -211,7 +211,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
 
 def extract_hawc2_noise(h2_noise: pd.DataFrame,
                         blade: str = 'All',
-                        model: str = 'All',
+                        model: str = 'Total',
                         ) -> pd.DataFrame:
     """
     Extract the noise data from a specific blade and noise model from a HAWC2 output file.
@@ -227,7 +227,7 @@ def extract_hawc2_noise(h2_noise: pd.DataFrame,
                 noise generated in noise mode 4: <x> in [1, ... , n_azim].
     model: str, optional (default='All')
         String indicator of the noise model for which to extract the noise data.
-            - 'All': the combined result with all models.
+            - 'Total': the combined result with all models (total noise).
             - 'TE': turbulent boundary layer trailing-edge noise.
             - 'TI': Turbulent inflow noise.
             - 'ST': Stall noise.

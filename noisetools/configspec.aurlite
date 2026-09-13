@@ -40,6 +40,6 @@
 
 [reconstruction]
 	seed = integer(min=0, default=123456)
-	mech = option('All', 'TI', 'TE', 'ST', 'TP', 'Full', default='All')
+	mech = option('Total', 'TI', 'TE', 'ST', 'TP', 'All', default='Total')
     fs = integer(min=0, default=48000)
     overlap = integer(min=2, default=3)
