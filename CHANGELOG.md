@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.2.1.dev2] - UNRELEASED
 
 ### Added
+- ```wintaur``` module: new parameters in the configspec:
+  - ```[conditions] turb```: simple input to set the turbulence level for the coherence loss modelling.
+
+
 - ```WavFile``` class:
   - ```from_one_channel()``` function to create a new WavFile instance from a mono signal array, similar to ```from_two_channel()```.
   - ```left```, ```right``` and ```sig``` properties have been added for external access to the signal content.
@@ -32,6 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Parameter ```wav``` of the class can now only be a 2D numpy array. Creation of a ```WavFile``` instance with 1D arrays should be done with ```from_two_channel()``` and ```from_one_channel```.
     - Parameter ```filename``` of the ```write()``` function no longer overwrites the attribute ```self.filename```.
 
+- ```hawc2``` module:
+  - ```read_hawc2_noise_psd``` function: changed observer position output to a tuple to alleviate typehint issues in other codes.
+  - Modifications of path typehints to reduce small annoyances in other codes.
+
+
+- ```sound_levels``` module:
+  - Changed the order of parameters in some functions to increase consistency between functions. This only affects optional parameters, but **will break compatibility with older codes that do not explicitly define kwargs**.
+  
 
 ### Deprecated
 - ```WavFile``` class:
