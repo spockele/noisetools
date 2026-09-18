@@ -26,7 +26,7 @@ __all__ = ['read_hawc2_res', 'read_hawc2_noise_psd', 'read_hawc2_bldata', 'read_
 
 
 def read_hawc2_res(model_path: str | os.PathLike,
-                   output_filename: str,
+                   output_filename: str | os.PathLike,
                    numbered_columns: bool = False,
                    ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -75,7 +75,7 @@ def read_hawc2_res(model_path: str | os.PathLike,
 
 
 def fname_hawc2_noise_psd(model_path: str | os.PathLike,
-                          output_filename: str,
+                          output_filename: str | os.PathLike,
                           obs: int,
                           ) -> str:
     """
@@ -99,10 +99,10 @@ def fname_hawc2_noise_psd(model_path: str | os.PathLike,
 
 
 def read_hawc2_noise_psd(model_path: str | os.PathLike,
-                         output_filename: str,
+                         output_filename: str | os.PathLike,
                          obs: int,
                          start_at: str = 'zero',
-                         ) -> tuple[pd.DataFrame, pd.DataFrame, list[float]]:
+                         ) -> tuple[pd.DataFrame, pd.DataFrame, tuple[float, float, float]]:
     """
     Read the HAWC2 aero_noise module PSD output file for a specific simulation.
 
@@ -153,7 +153,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     # Define the number of rows per time step.
     rows_per_t = nfreq + 2
     # Extract the coordinate of the observer.
-    obs_pos = [float(coo) for coo in lines[5].split()[-3:]]
+    obs_pos = tuple([float(coo) for coo in lines[5].split()[-3:]])
 
     # Read the timestamp headers separately.
     t_lines = lines[header_length::rows_per_t]
