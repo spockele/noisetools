@@ -3,6 +3,7 @@
     pres = float(default=101325.)
     dens = float(default=1.225)
     humi = float(min=0., max=100., default=80.)
+    turb = option('weak', 'medium', 'strong', 0, 1, default=1)
     grnd = option('snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood', default='grass')
 
 [hawc2_noise]

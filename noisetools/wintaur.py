@@ -161,6 +161,7 @@ class WinTAurProject:
                  pres: float = 101325.,
                  dens: float = 1.225,
                  humi: float = 80.,
+                 turb: Literal['weak', 'medium', 'strong'] | Literal[0, 1] = 1,
                  grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'] = 'grass',
 
                  run: bool = False,
@@ -223,6 +224,15 @@ class WinTAurProject:
         humi: float, optional (default = 80.)
             Atmospheric relative humidity used for atmospheric attenuation
             Default value is based on KNMI climate information [2]_ .
+        turb:
+            Parameter to set the coherence loss modelling to account for the turbulent atmosphere. There are three options:
+              1) String value 'weak', 'medium' or 'strong' setting the fluctuating index of refraction of the
+                turbulence to 1e-6, 1e-5 and 1e-4, respectively. The turbulence length scale will be set based
+                on the microphone height, as per Arntzen [4]_.
+              2) Integer 0: applies full coherence loss (T=0) to the ground effect. Effectively reduces the ground effect to
+                p / p0 = 1 / r1 + |Q| / r2
+              3) Integer 1: no coherence loss is modelled (T=1). Models the ground effect as
+                p / p0 = exp(ikr1) / r1 + Q exp(ikr2) / r2
         grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'], optional (default = 'grass')
             Ground type used for the ground effect calculation.
 
@@ -317,7 +327,9 @@ class WinTAurProject:
         .. [3] T. J. Larsen and A. M. Hansen, ‘How 2 HAWC2, the user’s manual’, DTU, Department of Wind Energy,
             Roskilde, Denmark, Technical Report Risø-R-1597(ver. 13.0)(EN), May 2023. Accessed: Jan. 31, 2023.
             [Online]. Available: http://tools.windenergy.dtu.dk/HAWC2/manual/
-
+        .. [4] M. Arntzen and D. G. Simons, ‘Ground Reflection with Turbulence Induced Coherence Loss in Flyover
+            Auralization’, International Journal of Aeroacoustics, vol. 13, no. 5–6, pp. 449–462, Oct. 2014,
+            doi: 10.1260/1475-472X.13.5-6.449.
         """
         # Create the new Case instance.
         new_case = WinTAurCase(self.project_path, case_name, new=True)
