@@ -59,9 +59,8 @@ class OctaveBand:
     """
     def __init__(self,
                  order: int = 3,
-                 band_range: tuple[int, int] | list[int, int] = None,
-                 freq_range: tuple[float, float] | list[float, float] = None,
-                 nominal_fm: tuple[float] | list[float] = None,
+                 band_range: tuple[int, int] | list[int] | None = None,
+                 freq_range: tuple[float, float] | list[float] | None = None,
                  ) -> None:
         if band_range is None and freq_range is None:
             if order == 1:
