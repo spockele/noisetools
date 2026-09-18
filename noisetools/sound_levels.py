@@ -28,7 +28,7 @@ from noisetools.octave_band import OctaveBand
 
 tableau = list(TABLEAU_COLORS.keys())
 __all__ = ['p2_time_weighted', 'l_time_weighted',
-           'p2eq', 'ospl', 'ospl_t', 't_out',
+           'p2eq', 'ospl', 'leq_t', 't_out',
            'octave_spectrum', 'octave_spectrogram',
            'amplitude_modulation', ]
 
@@ -48,7 +48,8 @@ def p2_time_weighted(signal: list | np.ndarray,
     fs: number
         The sampling frequency of the digital signal.
     mode: str
-        Sets the time weighting mode corresponding to the IEC 61672-1:2013 standard. [1]_
+        Sets the time weighting mode (fast (f), slow (s), impulse (i)),
+        corresponding to the IEC 61672-1:2013 standard [1]_.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
 
@@ -81,10 +82,10 @@ def p2_time_weighted(signal: list | np.ndarray,
         tau = 1. if mode in ('slow', 's') else 0.125
 
         alpha = np.exp(-1 / (fs * tau))
-        b = [1 - alpha]
-        a = [1, -alpha]
+        b = [1 - alpha, ]
+        a = [1, -alpha, ]
 
-        return spsig.lfilter(b, a, sig ** 2)
+        return spsig.lfilter(b, a, sig ** 2, zi=[sig[0] ** 2, ])[0]
 
     else:
         tau_rise = 0.035
@@ -93,7 +94,7 @@ def p2_time_weighted(signal: list | np.ndarray,
         alpha_fall = 1 - np.exp(-1 / (fs * tau_fall))
 
         new_sig = np.zeros(sig.size, dtype=float)
-        new_sig[0] += alpha_rise * sig[0] ** 2
+        new_sig[0] = sig[0] ** 2
 
         for ii in range(1, sig.size):
             rising = sig[ii] ** 2 > new_sig[ii - 1]
@@ -117,7 +118,8 @@ def l_time_weighted(signal: list | np.ndarray,
     fs: number
         The sampling frequency of the digital signal.
     mode: str
-        Sets the time weighting mode corresponding to the IEC 61672-1:2013 standard. [1]_
+        Sets the time weighting mode (fast (f), slow (s), impulse (i)),
+        corresponding to the IEC 61672-1:2013 standard [1]_.
     weighting: str, optional
         The name of the optional weighting curve to be used. Can be 'A' or 'C'.
 
@@ -135,10 +137,8 @@ def l_time_weighted(signal: list | np.ndarray,
     return 10 * np.log10(p2_time_weighted(signal, fs, mode, weighting) / (2e-5 ** 2))
 
 
-@warnings.deprecated("The function 'equivalent_pressure()' is renamed to 'p2eq'.")
-def equivalent_pressure(*args,
-                        **kwargs,
-                        ) -> float:
+@warnings.deprecated('The function equivalent_pressure() is depracated, and renamed to p2eq().')
+def equivalent_pressure(*args, **kwargs, ) -> float:
     """
     DEPRECATED
 
@@ -146,10 +146,7 @@ def equivalent_pressure(*args,
 
     Parameters
     ----------
-    *args
-        See p2eq.
-    **kwargs
-        See p2eq
+    See sound_levels.p2eq().
 
     Returns
     -------
@@ -222,10 +219,8 @@ def ospl(signal: list | np.ndarray,
     return 10 * np.log10(p2eq(signal, fs, weighting, ) / (2e-5 ** 2))
 
 
-@warnings.deprecated("The function 'ospl_t_out()' is renamed to 't_out'.")
-def ospl_t_out(*args,
-               **kwargs,
-               ) -> np.ndarray:
+@warnings.deprecated('The function ospl_t_out() is deprecated, and renamed to t_out().')
+def ospl_t_out(*args, **kwargs, ) -> np.ndarray:
     """
     DEPRECATED
 
@@ -233,10 +228,7 @@ def ospl_t_out(*args,
 
     Parameters
     ----------
-    *args
-        See t_out.
-    **kwargs
-        See t_out.
+    See sound_levels.t_out().
 
     Returns
     -------
@@ -300,9 +292,9 @@ def t_out(signal_size: int,
 
 def p2eq_t(signal: list | np.ndarray,
            fs: int | float | np.number,
-           weighting: Literal['A', 'C'] | None = None,
            delta_t: float | np.number = 1.,
            complete: bool = True,
+           weighting: Literal['A', 'C'] | None = None,
            ) -> np.ndarray:
     """
     Calculate the equivalent pressure (Pe^2) over time, of the input sound signal.
@@ -313,14 +305,14 @@ def p2eq_t(signal: list | np.ndarray,
         1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal
-    weighting: str, optional
-        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     delta_t: float | np.number, optional (default=1.)
         Desired timestep in the OSPL output, in seconds.
     complete: bool, optional (default=True)
         In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
         calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
         in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
 
     Returns
     -------
@@ -362,11 +354,11 @@ def p2eq_t(signal: list | np.ndarray,
 
 
 def leq_t(signal: list | np.ndarray,
-           fs: int | float | np.number,
-           weighting: Literal['A', 'C'] | None = None,
-           delta_t: float | np.number = 1.,
-           complete: bool = True,
-           ) -> np.ndarray:
+          fs: int | float | np.number,
+          delta_t: float | np.number = 1.,
+          complete: bool = True,
+          weighting: Literal['A', 'C'] | None = None,
+          ) -> np.ndarray:
     """
     Calculate the equivalent sound pressure level over time, of a digital signal.
 
@@ -376,26 +368,40 @@ def leq_t(signal: list | np.ndarray,
         1D Array with the digital signal.
     fs: number
         The sampling frequency of the digital signal.
-    weighting: str, optional
-        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
     delta_t: float | np.number, optional (default=1.)
         Timestep over which to calculate Leq, in seconds.
     complete: bool, optional (default=True)
         In case the final timestep does not cover the full delta_t, this parameter indicates whether to still
         calculate the last step. Example: signal.size = 95500, fs=48000, delta_t = 1., then complete=True will result
         in two OSPL timesteps, while complete=False will result in only one OSPL timestep.
+    weighting: str, optional
+        The name of the optional weighting curve to be used. Can be 'A' or 'C'.
 
     Returns
     -------
     Leq (dB) (weighted to selected weighting) at the timestamps defined by delta_t.
 
     """
-    pe2 = p2eq_t(signal, fs, weighting, delta_t, complete)
+    pe2 = p2eq_t(signal, fs, delta_t, complete, weighting)
 
     return 10 * np.log10(pe2 / (2e-5 ** 2))
 
 
-ospl_t = leq_t
+@warnings.deprecated('The function ospl_t() is deprecated, and renamed to leq_t().')
+def ospl_t(*args, **kwargs) -> np.ndarray:
+    """
+    Calculate the equivalent sound pressure level over time, of a digital signal.
+
+    Parameters
+    ----------
+    See sound_levels.leq_t().
+
+    Returns
+    -------
+    Leq (dB) (weighted to selected weighting) at the timestamps defined by delta_t.
+
+    """
+    return leq_t(*args, **kwargs)
 
 
 def octave_index(fs: int | float | np.number,
@@ -460,13 +466,27 @@ def octave_spectrum(signal: list | np.ndarray,
         - ```df```: the octave band width (Hz)
 
     """
+    # Convert signal to numpy array
+    if not isinstance(signal, np.ndarray):
+        sig = np.array(signal).copy()
+    else:
+        sig = signal.copy()
+
+    # Check that this signal is 1d array
+    if sig.ndim > 1:
+        raise ValueError('noisetools.p2eq_t only supports 1d signal arrays.')
+
+    # Apply the selected weighting
+    if weighting is not None:
+        sig = weigh_signal(sig, fs, weighting)
+
     out_index, octave = octave_index(fs, octave)
 
     out_spectrum = pd.Series(index=out_index, dtype=float)
 
     for band_select in out_index.get_level_values('band'):
-        band_signal = octave.filter_signal(signal, fs, band_select)
-        out_spectrum.loc[band_select] = ospl(band_signal, fs, weighting)
+        band_signal = octave.filter_signal(sig, fs, band_select)
+        out_spectrum.loc[band_select] = ospl(band_signal, fs, None)
 
     return out_spectrum
 
@@ -523,16 +543,16 @@ def octave_spectrogram(signal: list | np.ndarray,
 
     # Apply the selected weighting
     if weighting is not None:
-        sig = weigh_signal(signal, fs, curve=weighting)
+        sig = weigh_signal(signal, fs, weighting)
 
     out_index, octave = octave_index(fs, octave)
 
-    out_t = t_out(sig.size, fs, delta_t, complete=complete, centered=centered)
+    out_t = t_out(sig.size, fs, delta_t, complete, centered)
     out_spectrogram = pd.DataFrame(index=out_index, columns=out_t, dtype=float)
 
     for band_select in out_index.get_level_values('band'):
         band_signal = octave.filter_signal(sig, fs, band_select)
-        out_spectrogram.loc[band_select, :] = ospl_t(band_signal, fs, None, delta_t, complete=complete)
+        out_spectrogram.loc[band_select, :] = leq_t(band_signal, fs, delta_t, complete, None)
 
     return out_spectrogram
 
@@ -762,6 +782,7 @@ def amplitude_modulation(signal: list | np.ndarray,
 
 if __name__ == '__main__':
     test_sig = np.zeros(20 * 48000)
+    test_sig[:1*48000] = .5
     test_sig[1*48000:10*48000] = 1
 
     plt.plot(test_sig ** 2)
