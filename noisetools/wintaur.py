@@ -106,9 +106,14 @@ class WinTAurCase(ConfigObj):
         if not self['observers'] and self['hawc2_noise']['run']:
             raise VdtMissingValue(f"{self.case_path}: Section ['observers']: no observers defined.")
 
+        fname = self['hawc2_noise']['fname'] if self['hawc2_noise']['fname'] else self.case_name
+
         # At the end, clear the HAWC2 section if run=False.
         if not self['hawc2_noise']['run']:
-            self['hawc2_noise'] = {'run': False}
+            self['hawc2_noise'] = {'run': False,
+                                   'fname': fname
+                                   }
+
         # Only after that, warn the user of extra entries in the case file.
         for warn_msg in extra_warn:
             warnings.warn(warn_msg, category=UserWarning, stacklevel=2)
@@ -165,6 +170,7 @@ class WinTAurProject:
                  grnd: Literal['snow', 'forest', 'grass', 'dirt_roadside', 'dirt', 'asphalt', 'concrete', 'plywood'] = 'grass',
 
                  run: bool = False,
+                 fname: str | None = None,
                  base_htc: str | None = None,
                  rm_spl_files: bool = True,
 
@@ -240,6 +246,9 @@ class WinTAurProject:
 
         run: bool, optional (default = False)
             Indication to run the HAWC2 simulation.
+        fname: str, optional (default = None)
+            Optional filename for the HAWC2 output files, different from case_name.
+            Intended for cases where one HAWC2 simulations is used for multiple auralisations.
         base_htc: str, optional (default = None)
             Name of the base htc input file, which defines the turbine structure, aerodynamics, and control.
             Required parameter when ``[hawc2_noise] run=True``.
@@ -340,12 +349,14 @@ class WinTAurProject:
         new_case['conditions']['pres'] = pres
         new_case['conditions']['dens'] = dens
         new_case['conditions']['humi'] = humi
+        new_case['conditions']['turb'] = turb
         new_case['conditions']['grnd'] = grnd
 
         # Add the HAWC2 parameters, if hawc2_noise.run = True.
         if run:
             new_case['hawc2_noise'] = {}
             new_case['hawc2_noise']['run'] = run
+            new_case['hawc2_noise']['fname'] = fname
             new_case['hawc2_noise']['base_htc'] = base_htc
             new_case['hawc2_noise']['rm_spl_files'] = rm_spl_files
 

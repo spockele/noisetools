@@ -8,6 +8,7 @@
 
 [hawc2_noise]
     run = boolean(default=False)
+    fname = string(default='')
     base_htc = string()
     rm_spl_files = boolean(default=True)
 
