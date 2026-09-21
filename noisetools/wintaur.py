@@ -113,6 +113,8 @@ class WinTAurCase(ConfigObj):
             self['hawc2_noise'] = {'run': False,
                                    'fname': fname
                                    }
+        else:
+            self['hawc2_noise']['fname'] = fname
 
         # Only after that, warn the user of extra entries in the case file.
         for warn_msg in extra_warn:
