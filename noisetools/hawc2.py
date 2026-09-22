@@ -153,7 +153,7 @@ def read_hawc2_noise_psd(model_path: str | os.PathLike,
     # Define the number of rows per time step.
     rows_per_t = nfreq + 2
     # Extract the coordinate of the observer.
-    obs_pos = tuple([float(coo) for coo in lines[5].split()[-3:]])
+    obs_pos: tuple[float, float, float] = tuple([float(coo) for coo in lines[5].split()[-3:]])
 
     # Read the timestamp headers separately.
     t_lines = lines[header_length::rows_per_t]
@@ -520,7 +520,8 @@ def write_hawc2_bldata(fpath: str | os.PathLike,
 
 
 def read_hawc2_aedata(fpath: str | os.PathLike,
-                      aeset: int = 1) -> pd.DataFrame:
+                      aeset: int = 1
+                      ) -> pd.DataFrame:
     """
     Read a HAWC2 aerodynamic blade layout file.
 
