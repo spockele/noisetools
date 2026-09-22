@@ -106,15 +106,7 @@ class WinTAurCase(ConfigObj):
         if not self['observers'] and self['hawc2_noise']['run']:
             raise VdtMissingValue(f"{self.case_path}: Section ['observers']: no observers defined.")
 
-        fname = self['hawc2_noise']['fname'] if self['hawc2_noise']['fname'] else self.case_name
-
-        # At the end, clear the HAWC2 section if run=False.
-        if not self['hawc2_noise']['run']:
-            self['hawc2_noise'] = {'run': False,
-                                   'fname': fname
-                                   }
-        else:
-            self['hawc2_noise']['fname'] = fname
+        self['hawc2_noise']['fname'] = self['hawc2_noise']['fname'] if self['hawc2_noise']['fname'] else self.case_name
 
         # Only after that, warn the user of extra entries in the case file.
         for warn_msg in extra_warn:
@@ -189,6 +181,8 @@ class WinTAurProject:
                  z0: float = 1.0,
 
                  bldata: str | None = None,
+                 ae_filename: str | None = None,
+                 ae_set: int | None = None,
                  aerosections: int = 30,
                  aero_distribution: Literal['linear', 'cosine'] = 'cosine',
 
@@ -290,6 +284,10 @@ class WinTAurProject:
         bldata: str, optional (default = None)
             Filename of the boundary layer data file, relative to the project path.
             Required parameter when ``[hawc2_noise] run=True``.
+        ae_filename: str, optional (default = None)
+            Filename of the aerodynamic definition of the wind turbine blade.
+        ae_set: int, optional (default = None)
+            Number of the aerodynamic definition to use inside the definition file.
         aerosections: int, optional (default = 30)
             Defines the number of HAWC2 aerodynamic calculation points.
         aero_distribution: Literal['linear', 'cosine'], optional (default = 'cosine')
@@ -374,6 +372,8 @@ class WinTAurProject:
             new_case['hawc2_noise']['z0'] = z0
 
             new_case['hawc2_noise']['bldata'] = bldata
+            new_case['hawc2_noise']['ae_filename'] = ae_filename
+            new_case['hawc2_noise']['ae_set'] = ae_set
             new_case['hawc2_noise']['aerosections'] = aerosections
             new_case['hawc2_noise']['aero_distribution'] = aero_distribution
 

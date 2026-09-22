@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - ```wintaur``` module: new parameters in the configspec:
   - ```[conditions] turb```: simple input to set the turbulence level for the coherence loss modelling.
+  - ```[hawc2_noise] fname```: optional parameter to input a filename of the the HAWC2 result file that is different from the input file name.
+  - ```[hawc2_noise] ae_filename```: parameter to define the filename of the aerodynamic blade layout input file for HAWC2.
+  - ```[hawc2_noise] ae_set```: parameter to define the blade set in the aerodynamic layout file that HAWC2 should use.
 
 
 - ```WavFile``` class:

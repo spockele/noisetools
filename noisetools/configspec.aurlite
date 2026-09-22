@@ -24,6 +24,8 @@
     z0 = float(min=1e-12, default=1.0)
 
     bldata = string()
+    ae_filename = string()
+    ae_set = integer()
     aerosections = integer(min=1, default=30)
     aero_distribution = option('linear', 'cosine', default='cosine')
 
