@@ -73,8 +73,10 @@ class WinTAurCase(ConfigObj):
         # Run the validation of the case file.
         validation = self.validate(validator, preserve_errors=True)
 
+        self['hawc2_noise']['fname'] = self['hawc2_noise']['fname'] if self['hawc2_noise']['fname'] else self.case_name
+
         # Check for HAWC2 output files.
-        if (not os.path.exists(h2.fname_hawc2_noise_psd(self.project_path, self.case_name, 1))
+        if (not os.path.exists(h2.fname_hawc2_noise_psd(self.project_path, self['hawc2_noise']['fname'], 1))
                 and not self['hawc2_noise']['run']):
             raise FileNotFoundError(f"{self.case_name}, Section hawc2_noise, entry 'run': "
                                     f"No HAWC2 noise output found for this case. Set hawc2_noise.run to True.")
@@ -105,8 +107,6 @@ class WinTAurCase(ConfigObj):
         # First raise a VdtMissingValue in case no observers are defined.
         if not self['observers'] and self['hawc2_noise']['run']:
             raise VdtMissingValue(f"{self.case_path}: Section ['observers']: no observers defined.")
-
-        self['hawc2_noise']['fname'] = self['hawc2_noise']['fname'] if self['hawc2_noise']['fname'] else self.case_name
 
         # Only after that, warn the user of extra entries in the case file.
         for warn_msg in extra_warn:
