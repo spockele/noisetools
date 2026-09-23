@@ -175,18 +175,18 @@ class WinTAurProject:
                  hub_height: float | None = None,
 
                  ws: float | None = None,
+                 ti: float | None = None,
                  shear: tuple[int, float] = (3, 0.2),
                  wdir: tuple[float, float, float] = (0., 0., 0.),
-                 ti: float | None = None,
                  z0: float = 1.0,
 
                  bldata: str | None = None,
                  ae_filename: str | None = None,
-                 ae_set: int | None = None,
+                 ae_set: int = 1,
                  aerosections: int = 30,
                  aero_distribution: Literal['linear', 'cosine'] = 'cosine',
 
-                 mode: Literal['point', 'distribute', 'constant'] = 'point',
+                 mode: Literal['point', 'distribute', 'constant'] = 'distribute',
                  constant: float = 0.,
                  source_rr: float= 0.85,
                  n_sources: int = 31,
@@ -194,7 +194,7 @@ class WinTAurProject:
                  observers: tuple[tuple[str, float, float, float]] | None = None,
 
                  seed: int = 123456,
-                 mech: Literal['All', 'TI', 'TE', 'ST', 'TP', 'Full'] = 'All',
+                 mech: Literal['Total', 'TI', 'TE', 'ST', 'TP', 'All'] = 'Total',
                  fs: int = 48000,
                  overlap: int = 3
                  ) -> None:
@@ -286,7 +286,7 @@ class WinTAurProject:
             Required parameter when ``[hawc2_noise] run=True``.
         ae_filename: str, optional (default = None)
             Filename of the aerodynamic definition of the wind turbine blade.
-        ae_set: int, optional (default = None)
+        ae_set: int, optional (default = 1)
             Number of the aerodynamic definition to use inside the definition file.
         aerosections: int, optional (default = 30)
             Defines the number of HAWC2 aerodynamic calculation points.
